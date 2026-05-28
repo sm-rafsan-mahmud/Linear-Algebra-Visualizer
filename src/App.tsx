@@ -1,18 +1,14 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
-import FeatureCard from './components/FeatureCard'
-import transformImg from './assets/transform.jpeg'
-import eigenImg from './assets/eigenImg.png'
-import quizImg from './assets/quizImg.png'
-
 import HomePage from "./pages/HomePage"
-import "./3DSpace";
+import Transformations from "./pages/Transformations"
+import './App.css'
+import type { Page } from './lib/types'
 
-function App() {
-  return <HomePage />
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<Page>('home');
+
+  if (currentPage === 'transformations') {
+    return <Transformations onNavigate={setCurrentPage} />;
+  }
+  return <HomePage onNavigate={setCurrentPage} />;
 }
-
-export default App

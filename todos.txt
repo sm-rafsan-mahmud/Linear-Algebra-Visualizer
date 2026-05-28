@@ -6,4 +6,4 @@
 - Try some transformations
 - Try transformations on shapes
 - Visualize vector spans
-- 
+- Make sure user stays on page on reload (currently it returns to the home page)
