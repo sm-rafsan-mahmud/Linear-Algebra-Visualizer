@@ -1,9 +1,6 @@
 - Setup basic UI for the transformation page (input, visual, output)
 - Setup google docs-style table feature to create matrices & vectors
 - Add a menu/navigation bar
-- Create a class that makes grid (std. basis & transformed bases)
-- Display vectors in the space
 - Try some transformations
 - Try transformations on shapes
 - Visualize vector spans
-- Make sure user stays on page on reload (currently it returns to the home page)

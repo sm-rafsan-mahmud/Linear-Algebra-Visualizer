@@ -1,6 +1,7 @@
-'use client'
+import './Transformations.css'
 import type { Page } from '../lib/types'
 import { useTransformations } from '../hooks/useTransformations'
+import InputVector from '../components/Transformations/InputVector'
 
 type Props = {
   onNavigate: (page: Page) => void
@@ -8,15 +9,19 @@ type Props = {
 
 export default function Transformations({ onNavigate }: Props) {
     const {
-        mountRef
+        mountRef,
+        newVector
     } = useTransformations();
     
 
     return (
-        <div>
-            <div ref={mountRef} className="w-full h-full"/>
-            
-            <button onClick={() => onNavigate('home')}> Back</button>
+        <div id="container">
+            <div id="scene" ref={mountRef} className="w-full h-full"/>
+
+            <div id="controls">
+                <button onClick={() => onNavigate('home')}> Back</button>
+                <InputVector onNewVector={newVector}/>
+            </div>
         </div>
     )
 }
