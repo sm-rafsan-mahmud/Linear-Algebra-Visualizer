@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { createGrid } from '../lib/createGrid';
 import { createAxes } from '../lib/createAxes';
 import { createVector } from '../lib/createVector';
+import { createAxisLabels } from '../lib/createAxisLabels';
 
 function getRandomColor() {
   const letters = '0123456789ABCDEF';
@@ -20,6 +21,7 @@ function getRandomColor() {
 export function useTransformations() {
     const mountRef = useRef<HTMLDivElement>(null)
     const sceneRef = useRef<THREE.Scene | null>(null)
+    const labelsRef = useRef<{ xLbl: THREE.Mesh, yLbl: THREE.Mesh, zLbl: THREE.Mesh }>(null)
 
     const newVector = (x: number, y: number, z: number) => {
         createVector(sceneRef.current!, {x, y, z}, getRandomColor())
@@ -32,6 +34,7 @@ export function useTransformations() {
         const height = mount.clientHeight
 
         const renderer = new THREE.WebGLRenderer()
+        renderer.setPixelRatio(window.devicePixelRatio)
         renderer.setSize(width, height)
         mount.appendChild(renderer.domElement)
 
@@ -60,18 +63,38 @@ export function useTransformations() {
 
         const controls = new OrbitControls(camera, renderer.domElement)
 
-        const axishelper = new THREE.AxesHelper(5)
-        scene.add(axishelper)
-
         // grid & axes
-        const gridObjects = createGrid(scene, 10, 1)
-        const axes = createAxes(scene, 10, 0xff0000, 0x00ff00, 0x0000ff)
+        const gridObjects = createGrid(scene, 10, 1, 0xaaaaaa)
+        const majorGridObjects = createGrid(scene, 10, 5, 0xffffff)
+        const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
+
+
+        async function initLabels() {
+            const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
+            if (!isMounted) {
+                scene.remove(axisLabels.xLbl, axisLabels.yLbl, axisLabels.zLbl)
+                return
+            }
+            labelsRef.current = axisLabels
+        }
+
+        let isMounted = true
+        initLabels()
 
         let animationId: number
 
         function animate() {
             animationId = requestAnimationFrame(animate)
             controls.update()
+            // labelsRef becomes non-null asynchronously.
+            if (labelsRef.current) {
+                const { xLbl, yLbl, zLbl } = labelsRef.current
+
+                xLbl.quaternion.copy(camera.quaternion)
+                yLbl.quaternion.copy(camera.quaternion)
+                zLbl.quaternion.copy(camera.quaternion)
+            }
+
 
             renderer.render(scene, camera)
         }
@@ -79,12 +102,18 @@ export function useTransformations() {
         animate();
 
         return () => {
+            isMounted = false
             cancelAnimationFrame(animationId)
             controls.dispose()
             resizeObserver.disconnect()
 
             scene.remove(gridObjects)
+            scene.remove(majorGridObjects)
             scene.remove(axes.xAxis, axes.yAxis, axes.zAxis)
+            
+            if (labelsRef.current) {
+                scene.remove(labelsRef.current!.xLbl, labelsRef.current!.yLbl, labelsRef.current!.zLbl)
+            }
 
             renderer.dispose()
             mount.removeChild(renderer.domElement)

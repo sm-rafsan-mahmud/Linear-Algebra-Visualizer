@@ -4,3 +4,6 @@
 - Try some transformations
 - Try transformations on shapes
 - Visualize vector spans
+
+- display letters at positive axes
+- ensure vector gets cut off if it extends past current grid limit.
