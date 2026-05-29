@@ -1,0 +1,14 @@
+#container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    align-items: center;
+}
+
+#controls {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.75rem;
+    column-gap: 0.5rem;
+}

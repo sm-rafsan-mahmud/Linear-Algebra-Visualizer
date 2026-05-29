@@ -1,11 +1,13 @@
-<<<<<<< HEAD
 import { useState } from "react";
 import VBox from "../components/VBox";
+import { useTransformations } from '../hooks/useTransformations'
+import InputVector from '../components/Transformations/InputVector'
 
 interface RowData {
   id: number;
   content: string;
 }
+
 
 export default function Transformations() {
   const [rows, setRows] = useState<RowData[]>([
@@ -19,6 +21,11 @@ export default function Transformations() {
 
   // header ~48px + button ~44px + gaps ~44px = ~136px
   const HEADER_HEIGHT = 136;
+
+  const {
+        mountRef,
+        newVector
+    } = useTransformations();
 
   return (
     <div style={{
@@ -83,40 +90,13 @@ export default function Transformations() {
       </div>
 
       {/* RIGHT VIEWPORT */}
-      <div style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#64748b",
-        fontSize: "14px",
-      }}>
-        3D Viewport Workspace
-      </div>
+    <div style={{ flex: 1, position: "relative" }}>
+        <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+        <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
+            <InputVector onNewVector={newVector} />
+        </div>
+    </div>
 
     </div>
-  );
-=======
-'use client'
-import type { Page } from '../lib/types'
-import { useTransformations } from '../hooks/useTransformations'
-
-type Props = {
-  onNavigate: (page: Page) => void
-}
-
-export default function Transformations({ onNavigate }: Props) {
-    const {
-        mountRef
-    } = useTransformations();
-    
-
-    return (
-        <div>
-            <div ref={mountRef} className="w-full h-full"/>
-            
-            <button onClick={() => onNavigate('home')}> Back</button>
-        </div>
-    )
->>>>>>> f950c9d4153520ca918e0d69f5b0536ec80bfd52
+  )
 }
