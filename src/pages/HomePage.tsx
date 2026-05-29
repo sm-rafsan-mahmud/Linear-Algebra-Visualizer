@@ -3,7 +3,7 @@ import FeatureCard from '../components/FeatureCard'
 import transformImg from '../assets/transform.jpeg'
 import eigenImg from '../assets/eigenImg.png'
 import quizImg from '../assets/quizImg.png'
-
+import { Box } from '../components/Box'
 export default function HomePage() {
   return (
     <div>
@@ -13,12 +13,12 @@ export default function HomePage() {
       </div>
 
       <div className="card-container">
-        <FeatureCard
+        {/* <FeatureCard
           img={transformImg}
           alt="Transformation"
           name="Transformations"
           description="Visualize transformations"
-        />
+        /> */}
 
 
         <FeatureCard
@@ -26,6 +26,13 @@ export default function HomePage() {
           alt="Quiz"
           name="Quiz"
           description="Practice concepts interactively"
+        />
+
+        <FeatureCard
+          img={transformImg}
+          alt="Transformation"
+          name="Transformations"
+          description="Visualize transformations"
         />
       </div>
 
