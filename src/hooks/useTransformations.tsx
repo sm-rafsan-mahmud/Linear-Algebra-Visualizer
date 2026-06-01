@@ -6,6 +6,7 @@ import { createGrid } from '../lib/createGrid';
 import { createAxes } from '../lib/createAxes';
 import { createVector } from '../lib/createVector';
 import { createAxisLabels } from '../lib/createAxisLabels';
+import type { VectorObject } from '../lib/types';
 
 function getRandomColor() {
   const h = Math.random() * 360         // any hue
@@ -45,8 +46,27 @@ export function useTransformations() {
     const CAM_3D = 0
     const CAM_2D = 1
 
+    const vectors: VectorObject[] = [];
+
     const newVector = (x: number, y: number, z: number) => {
-        createVector(sceneRef.current!, {x, y, z}, getRandomColor())
+        vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
+    }
+
+    const scalarMultiply = (s: number) => {
+        const v: VectorObject = vectors[vectors.length - 1]
+        const x = s * v.pos.x
+	    const y = s * v.pos.y
+	    const z = s * v.pos.z
+	    vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
+    }
+
+    const vectorAdd = () => {
+        const u: VectorObject = vectors[vectors.length - 2]
+        const v: VectorObject = vectors[vectors.length - 1]
+        const x = u.pos.x + v.pos.x
+	    const y = u.pos.y + v.pos.y
+	    const z = u.pos.z + v.pos.z
+        vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
     }
 
     const setCameraPosition = (position: number) => {
@@ -136,7 +156,6 @@ export function useTransformations() {
         const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
         zAxisRef.current = axes.zAxis
 
-
         async function initLabels() {
             const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
             if (!isMounted) {
@@ -145,8 +164,6 @@ export function useTransformations() {
             }
             labelsRef.current = axisLabels
         }
-
-        
 
         let isMounted = true
         initLabels()
@@ -208,6 +225,8 @@ export function useTransformations() {
         newVector,
         setCameraPosition,
         CAM_3D,
-        CAM_2D
+        CAM_2D,
+        scalarMultiply,
+        vectorAdd
     }
 }

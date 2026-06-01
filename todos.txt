@@ -1,4 +1,3 @@
-- Setup basic UI for the transformation page (input, visual, output)
 - Setup google docs-style table feature to create matrices & vectors
 - Add a menu/navigation bar
 - Try some transformations

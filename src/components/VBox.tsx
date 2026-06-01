@@ -1,10 +1,5 @@
-
 import HBox from "./HBox";
-
-interface RowData {
-  keyId: number;
-  value: string;
-}
+import type { RowData } from "../lib/types";
 
 interface VBoxProps {
   rows: RowData[];

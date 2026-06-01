@@ -1,13 +1,10 @@
 import { useState } from "react";
 import VBox from "../components/VBox";
-import type { Page } from '../lib/types';
+import InputVector from "../components/Transformations/InputVector";
+import TempTransformControls from "../components/Transformations/TempTransformControls";
+import type { Page, RowData } from '../lib/types';
 import { useTransformations } from '../hooks/useTransformations';
 import { Cell } from "../components/Cell";
-
-interface RowData {
-  id: number;     // Unique identifier for loops and state updates
-  value: string;  // The actual formula or number inside the row's cell
-}
 
 type Props = {
   onNavigate: (page: Page) => void;
@@ -32,7 +29,9 @@ export default function Transformations({ onNavigate }: Props) {
         newVector,
         setCameraPosition,
         CAM_3D,
-        CAM_2D
+        CAM_2D,
+        scalarMultiply,
+        vectorAdd
     } = useTransformations();
   //const { mountRef } = useTransformations();
     
@@ -96,30 +95,20 @@ export default function Transformations({ onNavigate }: Props) {
           }} />
         </div>
 
-      </div>
-
-      {/* RIGHT VIEWPORT */}
-    <div style={{ flex: 1, position: "relative" }}>
-        <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-        <div id="camera-pos" style={{ position: "absolute", top: "20px", left: "20px", color: "#fff" }}>
-          <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
-          <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
         </div>
-        <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
-            {/* <InputVector onNewVector={newVector} /> */}
-        </div>
-    </div>
-      <div style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#64748b",
-        fontSize: "14px",
-      }}>
-        {/* Workspace content */}
-      </div>
 
-    </div>
+        {/* RIGHT VIEWPORT */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+            <div id="camera-pos" style={{ position: "absolute", top: "20px", left: "20px", color: "#fff" }}>
+              <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
+              <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
+            </div>
+            <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
+              <InputVector onNewVector={newVector} />
+              <TempTransformControls onScalarApply={scalarMultiply} onAddApply={vectorAdd} />
+            </div>
+          </div>
+        </div>
   );
 }
