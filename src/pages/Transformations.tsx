@@ -106,10 +106,10 @@ export default function Transformations({ onNavigate }: Props) {
           <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
         </div>
         <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
-            <InputVector onNewVector={newVector} />
+            {/* <InputVector onNewVector={newVector} /> */}
         </div>
     </div>
-      <div ref={mountRef} className="w-full h-full" style={{
+      <div style={{
         flex: 1,
         display: "flex",
         alignItems: "center",
