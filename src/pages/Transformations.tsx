@@ -24,7 +24,10 @@ export default function Transformations() {
 
   const {
         mountRef,
-        newVector
+        newVector,
+        setCameraPosition,
+        CAM_3D,
+        CAM_2D
     } = useTransformations();
 
   return (
@@ -92,6 +95,10 @@ export default function Transformations() {
       {/* RIGHT VIEWPORT */}
     <div style={{ flex: 1, position: "relative" }}>
         <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+        <div id="camera-pos" style={{ position: "absolute", top: "20px", left: "20px", color: "#fff" }}>
+          <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
+          <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
+        </div>
         <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
             <InputVector onNewVector={newVector} />
         </div>

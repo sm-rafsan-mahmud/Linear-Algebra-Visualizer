@@ -5,5 +5,5 @@
 - Try transformations on shapes
 - Visualize vector spans
 
-- display letters at positive axes
+- maybe find a way to switch axes labels to other side if they aren't in view.
 - ensure vector gets cut off if it extends past current grid limit.
