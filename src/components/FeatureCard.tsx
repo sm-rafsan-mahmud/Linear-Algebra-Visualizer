@@ -1,23 +1,21 @@
-type FeatureCardProps = {
-    img: string,
-    alt: string,
-    name: string,
-    description: string,
-    onClick: () => void
-};
+// type FeatureCardProps = {
+//     img: string;
+//     alt: string;
+//     name: string;
+//     description: string;
+// };
 
-export default function FeatureCard({
-    img,
-    alt,
-    name,
-    description,
-    onClick
-}: FeatureCardProps) {
-    return (
-        <div onClick={onClick} style={{ cursor: 'pointer' }}>
-            <img src={img} alt={alt} />
-            <h2>{name}</h2>
-            <p>{description}</p>
-        </div>
-    );
-}
+// export default function FeatureCard({
+//     img,
+//     alt,
+//     name,
+//     description
+// }: FeatureCardProps) {
+//     return (
+//         <div>
+//             <img src={img} alt={alt} />
+//             <h2>{name}</h2>
+//             <p>{description}</p>
+//         </div>
+//     );
+// }

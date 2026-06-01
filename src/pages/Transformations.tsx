@@ -1,25 +1,30 @@
 import { useState } from "react";
 import VBox from "../components/VBox";
-import { useTransformations } from '../hooks/useTransformations'
-import InputVector from '../components/Transformations/InputVector'
+import type { Page } from '../lib/types';
+import { useTransformations } from '../hooks/useTransformations';
+import { Cell } from "../components/Cell";
 
 interface RowData {
-  id: number;
-  content: string;
+  id: number;     // Unique identifier for loops and state updates
+  value: string;  // The actual formula or number inside the row's cell
 }
 
+type Props = {
+  onNavigate: (page: Page) => void;
+};
 
-export default function Transformations() {
+export default function Transformations({ onNavigate }: Props) {
   const [rows, setRows] = useState<RowData[]>([
-    { id: 1, content: "Transformation Step 1" },
+    { id: 1, value: "" },
   ]);
 
   const addRow = () => {
-    const nextId = rows.length + 1;
-    setRows([...rows, { id: nextId, content: `Transformation Step ${nextId}` }]);
+    const maxId = rows.reduce((max, row) => (row.id > max ? row.id : max), 0);
+    const nextId = maxId + 1;
+    setRows([...rows, { id: nextId, value: "" }]);
   };
 
-  // header ~48px + button ~44px + gaps ~44px = ~136px
+  
   const HEADER_HEIGHT = 136;
 
   const {
@@ -29,7 +34,8 @@ export default function Transformations() {
         CAM_3D,
         CAM_2D
     } = useTransformations();
-
+  //const { mountRef } = useTransformations();
+    
   return (
     <div style={{
       display: "flex",
@@ -79,15 +85,15 @@ export default function Transformations() {
           Add Row
         </button>
 
-        {/* VBox scroll area — explicit height, no flex magic */}
+        {/* Scroll Container Wrapper */}
         <div style={{
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
+          flex: 1,
+          position: "relative", /* Establishes a boundary for VBox's absolute positioning */
+          minHeight: 0,          /* Critical fix for nested flex scrolling engines */
         }}>
-          <VBox rows={rows} />
+          <VBox rows={rows} onRowCellChange={(rowId, newValue) => {
+            setRows(rows.map(row => row.id === rowId ? { ...row, value: newValue } : row));
+          }} />
         </div>
 
       </div>
@@ -103,7 +109,17 @@ export default function Transformations() {
             <InputVector onNewVector={newVector} />
         </div>
     </div>
+      <div ref={mountRef} className="w-full h-full" style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#64748b",
+        fontSize: "14px",
+      }}>
+        {/* Workspace content */}
+      </div>
 
     </div>
-  )
+  );
 }

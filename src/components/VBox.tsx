@@ -1,4 +1,17 @@
-export default function VBox({ rows }: any) {
+
+import HBox from "./HBox";
+
+interface RowData {
+  keyId: number;
+  value: string;
+}
+
+interface VBoxProps {
+  rows: RowData[];
+  onRowCellChange: (rowId: number, newValue: string) => void;
+  onDeleteRow?: (rowId: number) => void; // Optional callback for row deletion
+}
+export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) {
   return (
     <div style={{
       position: "absolute",   // ← take it out of flex flow
@@ -12,25 +25,19 @@ export default function VBox({ rows }: any) {
       gap: "8px",
       padding: "8px",
     }}>
-      {rows.map((row: any) => (
-        <div key={row.id} style={{
-          height: "60px",
-          minHeight: "60px",
-          flexShrink: 0,
-          width: "100%",
-          backgroundColor: "#9ac317",
-          border: "1px solid #444",
-          borderRadius: "4px",
-          padding: "0 12px",
-          color: "#fff",
-          fontSize: "13px",
-          display: "flex",
-          alignItems: "center",
-          boxSizing: "border-box",
-        }}>
-          {row.content}
-        </div>
-      ))}
+      {rows.map((row, index) => {
+        // Automatically re-calculates 1, 2, 3... sequentially when items are deleted!
+        const displayId = index + 1;
+
+        return (
+          <HBox
+            key={row.keyId}
+            rowIdx={index}
+            value={row.value}
+            onCellChange={(r, c, v) => onRowCellChange(row.keyId, v)}
+          />
+        );
+      })}
     </div>
   );
 }
