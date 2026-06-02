@@ -11,6 +11,6 @@ export type VectorObject = {
 }
 
 export type RowData = {
-    keyId: number;     // Unique identifier for loops and state updates
+    id: number;     // Unique identifier for loops and state updates
     value: string;  // The actual formula or number inside the row's cell
 }

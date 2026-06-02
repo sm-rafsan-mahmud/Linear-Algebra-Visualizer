@@ -1,13 +1,5 @@
 import HBox from "./HBox";
-<<<<<<< HEAD
 import type { RowData } from "../lib/types";
-=======
-
-interface RowData {
-  id: number;
-  value: string;
-}
->>>>>>> e8419ec (Created test matrix objects)
 
 interface VBoxProps {
   rows: RowData[];

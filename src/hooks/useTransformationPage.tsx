@@ -120,15 +120,12 @@ export function useTransformations() {
         // grid & axes
         const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
         const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
-        const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
-        const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
 
         const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
         zAxisRef.current = axes.zAxis
 
         async function initLabels() {
             const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
-            const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
             const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
             if (!isMounted) {
                 scene.remove(axisLabels.xLbl, axisLabels.yLbl, axisLabels.zLbl)
