@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
-import { evaluate } from 'mathjs';
 
-//layout constants 
-const CELL_HEIGHT = "60px";
-const CELL_WIDTH = "350px" 
 
 type cellProps = {
     row: number;
-    col: number;
     value: string;
-    onCellChange: (row: number, col: number, newValue: string) => void;
-    onFocus?: (row: number, col: number) => void;
-    onBlur?: (row: number, col: number) => void;
+    cellHeight: string | number;
+    cellWidth: string | number;
+    onCellChange: (row: number, newValue: string) => void;
+    onFocus?: (row: number) => void;
+    onBlur?: (row: number) => void;
 }
 
-export const Cell=({ row, col, value, onCellChange, onFocus, onBlur }: cellProps) => {
+export const Cell=({ row, value, cellHeight, cellWidth, onCellChange, onFocus, onBlur }: cellProps) => {
     const [rawValue, setRawValue] = useState(value);
     const [displayValue, setDisplayValue] = useState(value);
     const [isFocused, setIsFocused] = useState(false);
@@ -23,20 +20,20 @@ export const Cell=({ row, col, value, onCellChange, onFocus, onBlur }: cellProps
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setRawValue(newValue);
-        onCellChange(row, col, newValue);
+        onCellChange(row, newValue);
     };
 
     const handleFocus = () => {
         setIsFocused(true);
         setDisplayValue(rawValue);
-        onFocus?.(row, col);
+        onFocus?.(row);
     }; 
 
     const handleBlur = () => {
        setIsFocused(false);
        try {
             // Evaluates mathematical expressions like "2 + 2" or "10 * 5"
-            const result = evaluate(rawValue || "0");
+            const result = rawValue || "0";
             setDisplayValue(String(result));
             setHasError(false);
        } catch(e) {
@@ -44,17 +41,17 @@ export const Cell=({ row, col, value, onCellChange, onFocus, onBlur }: cellProps
             setHasError(true);
             setDisplayValue(rawValue);
        }
-       onBlur?.(row, col);
+       onBlur?.(row);
     };
 
     return (
         <div style={{
-            width: CELL_WIDTH,
-            height: CELL_HEIGHT,
+            width: cellWidth,
+            height: cellHeight,
             display: "flex",
             alignItems: "left",
             justifyContent: "center",
-            border: hasError ? "2px solid #f5f0f0" : "1px solid #444",
+            border: hasError ? "2px solid #c14444" : "1px solid #444",
             backgroundColor: "#d7d7d7",
             color: "#03b8ff",
             boxSizing: "border-box"
@@ -76,6 +73,7 @@ export const Cell=({ row, col, value, onCellChange, onFocus, onBlur }: cellProps
                     color: "#000"
                 }}
             />
+
         </div>
     );
 }

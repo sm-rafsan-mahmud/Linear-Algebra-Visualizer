@@ -1,72 +1,93 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import MatrixGrid from "../components/MatrixGrid";
 import VBox from "../components/VBox";
-import InputVector from "../components/Transformations/InputVector";
-import TempTransformControls from "../components/Transformations/TempTransformControls";
-import type { Page, RowData } from '../lib/types';
-import { useTransformations } from '../hooks/useTransformationPage';
-import { Cell } from "../components/Cell";
+import { useTransformations } from "../hooks/useTransformationPage";
+import type { RowData, Page } from "../lib/types";
 
-type Props = {
+interface TransformationPageProps {
   onNavigate: (page: Page) => void;
-};
+}
 
-export default function Transformations({ onNavigate }: Props) {
+export default function TransformationPage({ onNavigate }: TransformationPageProps) {
+  // TEXT ROWS (VBox)
+  // -------------------------
+  
   const [rows, setRows] = useState<RowData[]>([
     { keyId: 1, value: "" },
   ]);
-
   const addRow = () => {
     const maxId = rows.reduce((max, row) => (row.keyId > max ? row.keyId : max), 0);
     const nextId = maxId + 1;
     setRows([...rows, { keyId: nextId, value: "" }]);
   };
 
-  
-  const HEADER_HEIGHT = 136;
+  // -------------------------
+  // MATRIX STATE
+  // -------------------------
+  const [matrix, setMatrix] = useState<string[][]>([
+    ["0", "0"],
+    ["0", "0"],
+  ]);
 
   const {
-        mountRef,
-        newVector,
-        setCameraPosition,
-        CAM_3D,
-        CAM_2D,
-        scalarMultiply,
-        vectorAdd
-    } = useTransformations();
-  //const { mountRef } = useTransformations();
-    
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "row",
-      width: "100vw",
-      height: "100vh",
-      background: "#0f172a",
-      overflow: "hidden",
-      boxSizing: "border-box",
-    }}>
+    mountRef,
+    setCameraPosition,
+    CAM_3D,
+    CAM_2D,
+  } = useTransformations();
 
-      {/* LEFT SIDEBAR */}
+  // -------------------------
+  // MATRIX CONTROLS
+  // -------------------------
+  const addMatrixRow = () => {
+    const cols = matrix[0]?.length || 1;
+    setMatrix((prev) => [
+      ...prev,
+      Array.from({ length: cols }, () => ""),
+    ]);
+  };
+
+  const addMatrixCol = () => {
+    setMatrix((prev) =>
+      prev.map((row) => [...row, ""])
+    );
+  };
+
+  const removeMatrixRow = () => {
+    setMatrix((prev) => prev.slice(0, -1));
+  };
+
+  const removeMatrixCol = () => {
+    setMatrix((prev) =>
+      prev.map((row) => row.slice(0, -1))
+    );
+  };
+
+  // -------------------------
+  // DEBUG
+  // -------------------------
+  useEffect(() => {
+    console.log("Matrix updated:", matrix);
+  }, [matrix]);
+
+  // -------------------------
+  // UI
+  // -------------------------
+  return (
+    <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
+
+      {/* LEFT PANEL */}
       <div style={{
-        width: "33.33%",
-        height: "100vh",
+        width: "33%",
         display: "flex",
         flexDirection: "column",
-        padding: "20px",
-        gap: "12px",
-        borderRight: "2px solid #1e293b",
-        boxSizing: "border-box",
-        overflow: "hidden",
+        padding: 20,
+        gap: 12,
+        background: "#0f172a",
+        color: "white"
       }}>
 
-        <h1 style={{
-          color: "#fff",
-          margin: 0,
-          fontSize: "1.4rem",
-          fontWeight: 600,
-        }}>
-          Transformations
-        </h1>
+        <h2>Linear Algebra Visualizer</h2>
 
         <button
           onClick={addRow}
@@ -83,32 +104,59 @@ export default function Transformations({ onNavigate }: Props) {
         >
           Add Row
         </button>
+        {/* VBox (optional existing system) */}
+        <VBox
+          rows={rows}
+          onRowCellChange={(id, val) =>
+            setRows((prev) =>
+              prev.map((r) =>
+                r.keyId === id ? { ...r, value: val } : r
+              )
+            )
+          }
+        />
 
-        {/* Scroll Container Wrapper */}
+        {/* MATRIX GRID */}
+        <div style={{ marginTop: 20 }}>
+          <h3>Matrix</h3>
+
+          <MatrixGrid
+            values={matrix}
+            setValues={setMatrix}
+          />
+        </div>
+
+        {/* MATRIX CONTROLS */}
         <div style={{
-          flex: 1,
-          position: "relative", /* Establishes a boundary for VBox's absolute positioning */
-          minHeight: 0,          /* Critical fix for nested flex scrolling engines */
+          marginTop: "auto",
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap"
         }}>
-          <VBox rows={rows} onRowCellChange={(rowId, newValue) => {
-            setRows(rows.map(row => row.keyId === rowId ? { ...row, value: newValue } : row));
-          }} />
+          <button onClick={addMatrixRow}>+ Row</button>
+          <button onClick={removeMatrixRow}>- Row</button>
+          <button onClick={addMatrixCol}>+ Col</button>
+          <button onClick={removeMatrixCol}>- Col</button>
         </div>
 
-        </div>
+      </div>
 
-        {/* RIGHT VIEWPORT */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-            <div id="camera-pos" style={{ position: "absolute", top: "20px", left: "20px", color: "#fff" }}>
-              <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
-              <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
-            </div>
-            <div style={{ position: "absolute", bottom: "20px", left: "20px" }}>
-              <InputVector onNewVector={newVector} />
-              <TempTransformControls onScalarApply={scalarMultiply} onAddApply={vectorAdd} />
-            </div>
-          </div>
+      {/* RIGHT PANEL */}
+      <div style={{ flex: 1, position: "relative" }}>
+        <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+
+        <div style={{
+          position: "absolute",
+          top: 20,
+          left: 20,
+          display: "flex",
+          gap: 8
+        }}>
+          <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
+          <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
         </div>
+      </div>
+
+    </div>
   );
 }

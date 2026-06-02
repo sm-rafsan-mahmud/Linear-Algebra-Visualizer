@@ -1,20 +1,28 @@
 import HBox from "./HBox";
+<<<<<<< HEAD
 import type { RowData } from "../lib/types";
+=======
+
+interface RowData {
+  id: number;
+  value: string;
+}
+>>>>>>> e8419ec (Created test matrix objects)
 
 interface VBoxProps {
   rows: RowData[];
   onRowCellChange: (rowId: number, newValue: string) => void;
-  onDeleteRow?: (rowId: number) => void; // Optional callback for row deletion
+  onDeleteRow?: (rowId: number) => void;
 }
 export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) {
   return (
     <div style={{
-      position: "absolute",   // ← take it out of flex flow
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      overflowY: "scroll",   // ← always show scrollbar
+      // position: "absolute",   // ← take it out of flex flow
+      // top: 0,
+      // left: 0,
+      // right: 0,
+      // bottom: 0,
+      // overflowY: "scroll",   // ← always show scrollbar
       display: "flex",
       flexDirection: "column",
       gap: "8px",
@@ -24,13 +32,13 @@ export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) 
         // Automatically re-calculates 1, 2, 3... sequentially when items are deleted!
         const displayId = index + 1;
 
-        return (
+        return ( 
           <HBox
-            key={row.keyId}
+            key={row.id}
             rowIdx={index}
             value={row.value}
-            onCellChange={(r, c, v) => onRowCellChange(row.keyId, v)}
-          />
+            onCellChange={(r, v) => onRowCellChange(row.id, v)} 
+            />
         );
       })}
     </div>

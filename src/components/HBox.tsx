@@ -4,11 +4,13 @@ import { Cell } from "./Cell";
 const HBOX_MINHEIGHT = "70px";
 const HBOX_WIDTH = "100%";
 const HBOX_GAP = "12px";
+const CELLWIDTH = "350px";
+const CELLHEIGHT = "60px";
 
 type HBoxProps = {
   rowIdx: number;
   value: string;
-  onCellChange: (r: number, c: number, v: string) => void;
+  onCellChange: (r: number, v: string) => void;
   children?: ReactNode; // Children will now hold our ID label and delete button
 };
 
@@ -24,7 +26,7 @@ export default function HBox({ rowIdx, value, onCellChange, children }: HBoxProp
         height: "auto",
         minHeight: HBOX_MINHEIGHT,
         width: HBOX_WIDTH,
-        backgroundColor: "#f4f4f4",
+        backgroundColor: "#ea2020",
         border: "1px solid #444",
         padding: "10px",
         boxSizing: "border-box",
@@ -41,11 +43,12 @@ export default function HBox({ rowIdx, value, onCellChange, children }: HBoxProp
       {/* 1. Your built-in row cell */}
       <Cell
         row={rowIdx}
-        col={0}
         value={value}
+        cellHeight={CELLHEIGHT}
+        cellWidth={CELLWIDTH}
         onCellChange={onCellChange}
-        onBlur={(r: number, c: number) => console.log("blur", r, c)}
-        onFocus={(r: number, c: number) => console.log("focus", r, c)}
+        onBlur={(r: number) => console.log("blur", r)}
+        onFocus={(r: number) => console.log("focus", r)}
       />
 
       {/* 2. The dynamic ID metadata and delete action buttons drop in here */}
