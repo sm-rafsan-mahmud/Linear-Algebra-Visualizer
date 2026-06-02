@@ -2,10 +2,10 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
-import { createGrid } from '../lib/createGrid';
 import { createAxes } from '../lib/createAxes';
-import { createVector } from '../lib/createVector';
 import { createAxisLabels } from '../lib/createAxisLabels';
+import { createGrid, disposeGrid } from '../lib/createGrid';
+import { createVector } from '../lib/createVector';
 import type { VectorObject } from '../lib/types';
 
 function getRandomColor() {
@@ -33,7 +33,7 @@ function getRandomColor() {
 // TODO: Start work on transformations.
 
 export function useTransformations() {
-    const mountRef = useRef<HTMLDivElement>(null)
+    const mountRef = useRef<HTMLDivElement | null>(null)
     const sceneRef = useRef<THREE.Scene | null>(null)
     const perspectiveCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
     const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null)
@@ -41,7 +41,7 @@ export function useTransformations() {
     const controlsRef = useRef<OrbitControls | null>(null)
     const labelsRef = useRef<{ xLbl: THREE.Mesh, yLbl: THREE.Mesh, zLbl: THREE.Mesh }>(null)
     const zAxisRef = useRef<Line2 | null>(null) // only need the zAxis one because the other two are unchanging (may change)
-    
+
     // camera position constants
     const CAM_3D = 0
     const CAM_2D = 1
@@ -151,8 +151,9 @@ export function useTransformations() {
         controlsRef.current = new OrbitControls(camera, renderer.domElement)
 
         // grid & axes
-        const gridObjects = createGrid(scene, 10, 1, 0xaaaaaa)
-        const majorGridObjects = createGrid(scene, 10, 5, 0xffffff)
+        const gridObjects = createGrid(sceneRef.current, 10, 1, 0xaaaaaa)
+        const majorGridObjects = createGrid(sceneRef.current, 10, 5, 0xffffff)
+
         const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
         zAxisRef.current = axes.zAxis
 
@@ -207,8 +208,8 @@ export function useTransformations() {
             }
             resizeObserver.disconnect()
 
-            scene.remove(gridObjects)
-            scene.remove(majorGridObjects)
+            disposeGrid(sceneRef.current!, gridObjects)
+            disposeGrid(sceneRef.current!, majorGridObjects)
             scene.remove(axes.xAxis, axes.yAxis, axes.zAxis)
             
             if (labelsRef.current) {

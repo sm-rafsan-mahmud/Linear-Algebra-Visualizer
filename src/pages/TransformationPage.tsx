@@ -3,7 +3,7 @@ import VBox from "../components/VBox";
 import InputVector from "../components/Transformations/InputVector";
 import TempTransformControls from "../components/Transformations/TempTransformControls";
 import type { Page, RowData } from '../lib/types';
-import { useTransformations } from '../hooks/useTransformations';
+import { useTransformations } from '../hooks/useTransformationPage';
 import { Cell } from "../components/Cell";
 
 type Props = {
@@ -12,13 +12,13 @@ type Props = {
 
 export default function Transformations({ onNavigate }: Props) {
   const [rows, setRows] = useState<RowData[]>([
-    { id: 1, value: "" },
+    { keyId: 1, value: "" },
   ]);
 
   const addRow = () => {
-    const maxId = rows.reduce((max, row) => (row.id > max ? row.id : max), 0);
+    const maxId = rows.reduce((max, row) => (row.keyId > max ? row.keyId : max), 0);
     const nextId = maxId + 1;
-    setRows([...rows, { id: nextId, value: "" }]);
+    setRows([...rows, { keyId: nextId, value: "" }]);
   };
 
   
@@ -91,7 +91,7 @@ export default function Transformations({ onNavigate }: Props) {
           minHeight: 0,          /* Critical fix for nested flex scrolling engines */
         }}>
           <VBox rows={rows} onRowCellChange={(rowId, newValue) => {
-            setRows(rows.map(row => row.id === rowId ? { ...row, value: newValue } : row));
+            setRows(rows.map(row => row.keyId === rowId ? { ...row, value: newValue } : row));
           }} />
         </div>
 

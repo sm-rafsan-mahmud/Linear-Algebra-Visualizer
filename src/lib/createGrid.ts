@@ -9,7 +9,8 @@ export function createGrid(
     size: number,
     step: number,
     color: number,
-    linewidth: number = 2): LineSegments2 {
+    linewidth: number = 2
+): LineSegments2 {
     const points: number[] = []
 
     for (let i = -size; i <= size; i += step) {
@@ -37,4 +38,14 @@ export function createGrid(
     scene.add(grid)
 
     return grid
+}
+
+/**
+ * Removes a grid from the scene and frees its GPU resources.
+ * Always call this instead of just scene.remove() to avoid memory leaks.
+ */
+export function disposeGrid(scene: THREE.Scene, grid: LineSegments2): void {
+    scene.remove(grid)
+    grid.geometry.dispose()
+    ;(grid.material as THREE.Material).dispose()
 }
