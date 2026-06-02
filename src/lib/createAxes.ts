@@ -27,7 +27,7 @@ export function createAxes(
  
     const xAxis = makeLine([-size, 0, 0, size, 0, 0], xColor)
     const yAxis = makeLine([0, -size, 0, 0, size, 0], yColor)
-    const zAxis = makeLine([0, 0, -size, 0, 0, size], zColor)
+    const zAxis = makeLine([0, 0, -size + 1, 0, 0, size - 1], zColor)
  
     scene.add(xAxis, yAxis, zAxis)
     return {xAxis, yAxis, zAxis}

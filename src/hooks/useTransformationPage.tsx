@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
 import { createAxes } from '../lib/createAxes';
 import { createAxisLabels } from '../lib/createAxisLabels';
 import { createGrid, disposeGrid } from '../lib/createGrid';
-import { useVectors } from './useVectors';
 import { createCoordinates } from '../lib/createCoordinates';
+import { useVectors } from './useVectors';
 
 // TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
 // TODO: Start work on transformations.
@@ -26,9 +26,9 @@ export function useTransformations() {
     const CAM_2D = 1
 
     // logical constants
-    const GRID_SIZE = 10
-    const GRID_STEP = 1
-    const MAJOR_GRID_STEP = GRID_STEP * 5
+    const GRID_SIZE       = 10;
+    const GRID_STEP       = 1;
+    const MAJOR_GRID_STEP = 5 * GRID_STEP;
 
     const {
         newVector,
@@ -120,12 +120,15 @@ export function useTransformations() {
         // grid & axes
         const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
         const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
+        const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
+        const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
 
         const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
         zAxisRef.current = axes.zAxis
 
         async function initLabels() {
             const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
+            const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
             const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
             if (!isMounted) {
                 scene.remove(axisLabels.xLbl, axisLabels.yLbl, axisLabels.zLbl)

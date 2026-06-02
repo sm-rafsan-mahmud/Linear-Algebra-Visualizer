@@ -4,13 +4,7 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { Point3D, VectorObject } from './types'
 
-// create a vector and display it to the scene.
-// 
-// parameters: scene, tip pos (either THREE.Vector3 or Point3D, unsure which is more useful.), color
-// opt: keep track of num vectors and/or used colors incase color is not provided.
-
-const SHAFT_RADIUS = 0.03
-const HEAD_RADIUS  = 0.08
+const HEAD_RADIUS  = 0.15
 const HEAD_LENGTH  = 0.25          // world units, not a proportion of vector length
 const SEGMENTS     = 16
 
@@ -18,20 +12,63 @@ const SEGMENTS     = 16
 export function createVector(
     scene: THREE.Scene,
     pos: Point3D,
-    color: number
+    color: number,
+    gridSize: number
 ): VectorObject {
-    const tip    = new THREE.Vector3(pos.x, pos.y, pos.z)
-    const length = tip.length()
  
+    // determine if the vector will extend past the grid
+    // if so, we find the point on the grid edge it intersects
+    // then we chop it.
+    let chop: boolean = false
+
+    if (Math.abs(pos.x) > gridSize) { chop = true }
+    if (Math.abs(pos.y) > gridSize) { chop = true }
+    if (Math.abs(pos.z) > gridSize) { chop = true }
+
+    let intersection: Point3D
+
+    if (chop) {
+        let t = Infinity
+        if (pos.x !== 0) t = Math.min(t, gridSize / Math.abs(pos.x))
+        if (pos.y !== 0) t = Math.min(t, gridSize / Math.abs(pos.y))
+        if (pos.z !== 0) t = Math.min(t, gridSize / Math.abs(pos.z))
+
+        intersection = { x: t * pos.x, y: t * pos.y, z: t * pos.z }
+    }
+
     // create the shaft
-    const shaftLength = Math.max(0, length - HEAD_LENGTH)
- 
-    const shaftGeometry = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, shaftLength, SEGMENTS)
-    const shaftMaterial = new THREE.MeshBasicMaterial({ color })
-    const shaft         = new THREE.Mesh(shaftGeometry, shaftMaterial)
- 
-    // ensure shaft starts at origin: centered at origin by default
-    shaft.position.y = shaftLength / 2
+    const shaftGeometry = new LineGeometry()
+    let shaftMaterial: LineMaterial
+    if (chop) {
+        shaftGeometry.setPositions([
+            0, 0, 0,
+            intersection!.x, intersection!.y, intersection!.z
+            // we know intersection is not null because it was assigned
+            // in an if statement with the same condition.
+        ])
+
+        shaftMaterial = new LineMaterial({
+            color,
+            linewidth: 3,
+            dashed: true,
+            dashSize: 0.15,
+            gapSize:  0.1,
+            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
+        })
+    } else {
+        shaftGeometry.setPositions([
+            0, 0, 0,
+            pos.x, pos.y, pos.z
+        ])
+
+        shaftMaterial = new LineMaterial({
+            color,
+            linewidth: 3,
+            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
+        })
+    }
+    const shaft         = new Line2(shaftGeometry, shaftMaterial)
+    shaft.computeLineDistances()
  
     // create the head
     const headGeometry = new THREE.ConeGeometry(HEAD_RADIUS, HEAD_LENGTH, SEGMENTS)
@@ -39,46 +76,61 @@ export function createVector(
     const head         = new THREE.Mesh(headGeometry, headMaterial)
  
     // cone is also centered at origin: place it above the shaft
-    head.position.y = shaftLength + HEAD_LENGTH / 2
- 
-    // create the group to change direction at the same time.
-    const group = new THREE.Group()
-    group.add(shaft, head)
+    const dir = new THREE.Vector3(pos.x, pos.y, pos.z).normalize()
+
+    if (chop) {
+        head.position.set(
+            intersection!.x + dir.x * HEAD_LENGTH / 2,
+            intersection!.y + dir.y * HEAD_LENGTH / 2,
+            intersection!.z + dir.z * HEAD_LENGTH / 2
+        )
+    } else {
+        head.position.set(
+            pos.x + dir.x * HEAD_LENGTH / 2,
+            pos.y + dir.y * HEAD_LENGTH / 2,
+            pos.z + dir.z * HEAD_LENGTH / 2
+        )
+    }
  
     const yAxis = new THREE.Vector3(0, 1, 0)
-    group.quaternion.setFromUnitVectors(yAxis, tip.clone().normalize())
+    head.quaternion.setFromUnitVectors(yAxis, dir)
  
-    scene.add(group)
+    scene.add(shaft, head)
  
-    // create the projection line
-    const projGeometry = new LineGeometry()
-    projGeometry.setPositions([
-        pos.x, pos.y, pos.z,    // tip
-        pos.x, pos.y, 0         // foot on XY plane
-    ])
+    // create the projection (only if the vector stays in the grid.)
+    let projection: Line2
+    let dot: THREE.Mesh
+    if (!chop) {
+        // create the projection line
+        const projGeometry = new LineGeometry()
+        projGeometry.setPositions([
+            pos.x, pos.y, pos.z,    // tip
+            pos.x, pos.y, 0         // foot on XY plane
+        ])
  
-    const projMaterial = new LineMaterial({
-        color,
-        linewidth: 3,
-        dashed: true,
-        dashSize: 0.15,
-        gapSize:  0.1,
-        opacity:  0.5,
-        transparent: true,
-        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
-    })
+        const projMaterial = new LineMaterial({
+            color,
+            linewidth: 3,
+            dashed: true,
+            dashSize: 0.15,
+            gapSize:  0.1,
+            opacity:  0.5,
+            transparent: true,
+            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
+        })
  
-    const projection = new Line2(projGeometry, projMaterial)
-    projection.computeLineDistances()
-    scene.add(projection)
+        projection = new Line2(projGeometry, projMaterial)
+        projection.computeLineDistances()
+        scene.add(projection)
  
-    // create the projection dot
-    const dot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.05, SEGMENTS, SEGMENTS),
-        new THREE.MeshBasicMaterial({ color })
-    )
-    dot.position.set(pos.x, pos.y, 0)
-    scene.add(dot)
+        // create the projection dot
+        dot = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, SEGMENTS, SEGMENTS),
+            new THREE.MeshBasicMaterial({ color })
+        )
+        dot.position.set(pos.x, pos.y, 0)
+        scene.add(dot)
+    }
  
-    return { group, shaft, head, projection, dot, pos }
+    return {shaft, head, pos}
 }

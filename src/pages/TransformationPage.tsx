@@ -30,49 +30,16 @@ export default function TransformationPage({ onNavigate }: TransformationPagePro
   ]);
 
   const {
-    mountRef,
-    setCameraPosition,
-    CAM_3D,
-    CAM_2D,
-  } = useTransformations();
-
-  // -------------------------
-  // MATRIX CONTROLS
-  // -------------------------
-  const addMatrixRow = () => {
-    const cols = matrix[0]?.length || 1;
-    setMatrix((prev) => [
-      ...prev,
-      Array.from({ length: cols }, () => ""),
-    ]);
-  };
-
-  const addMatrixCol = () => {
-    setMatrix((prev) =>
-      prev.map((row) => [...row, ""])
-    );
-  };
-
-  const removeMatrixRow = () => {
-    setMatrix((prev) => prev.slice(0, -1));
-  };
-
-  const removeMatrixCol = () => {
-    setMatrix((prev) =>
-      prev.map((row) => row.slice(0, -1))
-    );
-  };
-
-  // -------------------------
-  // DEBUG
-  // -------------------------
-  useEffect(() => {
-    console.log("Matrix updated:", matrix);
-  }, [matrix]);
-
-  // -------------------------
-  // UI
-  // -------------------------
+        mountRef,
+        newVector,
+        setCameraPosition,
+        CAM_3D,
+        CAM_2D,
+        applyScalarMultiply,
+        applyVectorAdd
+    } = useTransformations();
+  //const { mountRef } = useTransformations();
+    
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
 
