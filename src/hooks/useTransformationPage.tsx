@@ -32,7 +32,7 @@ function getRandomColor() {
 // TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
 // TODO: Start work on transformations.
 
-export function useTransformations() {
+export function useTransformationPage() {
     const mountRef = useRef<HTMLDivElement | null>(null)
     const sceneRef = useRef<THREE.Scene | null>(null)
     const perspectiveCameraRef = useRef<THREE.PerspectiveCamera | null>(null)

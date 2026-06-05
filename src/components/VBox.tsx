@@ -1,13 +1,5 @@
-import HBox from "./HBox";
-<<<<<<< HEAD
+import HBox from "./HBox"; 
 import type { RowData } from "../lib/types";
-=======
-
-interface RowData {
-  id: number;
-  value: string;
-}
->>>>>>> e8419ec (Created test matrix objects)
 
 interface VBoxProps {
   rows: RowData[];
@@ -34,10 +26,10 @@ export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) 
 
         return ( 
           <HBox
-            key={row.id}
+            key={row.keyId}
             rowIdx={index}
             value={row.value}
-            onCellChange={(r, v) => onRowCellChange(row.id, v)} 
+            onCellChange={(r, v) => onRowCellChange(row.keyId, v)} 
             />
         );
       })}
