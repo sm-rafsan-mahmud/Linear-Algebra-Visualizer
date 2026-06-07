@@ -1,44 +1,34 @@
-import React from "react";
-import { MatrixEntry } from "./MatrixEntry";
-type Props = {
+import type { ChangeEvent } from "react";
+
+interface MatrixProps {
   nameID: string;
-  values: number[][];
-  setValues: (row: number, col: number, newValue: number) => void;
-};    
+  values: string[][];
+  setValues: (row: number, col: number, value: string) => void;
+}
 
-//React.Dispatch<React.SetStateAction<number[][]>>;
-export default function Matrix({ nameID, values, setValues }: Props) {
-
-  // const handleEntryChange = (
-  //   row: number,
-  //   col: number,
-  //   newValue: string
-  // ) => {
-  //   setValues((prev) =>
-  //     prev.map((r, i) =>
-  //       r.map((val, j) =>
-  //         i === row && j === col ? newValue : val
-  //       )
-  //     )
-  //   );
-  // };
-
-  const handleEntryChange = (row: number, col: number, newValue: string) => {
-    setValues(row, col, Number(newValue));
-  };
-
+export default function Matrix({ nameID, values, setValues }: MatrixProps) {
   return (
-    <div>
-      {values.map((row, rowIdx) => (
-        <div key={rowIdx} style={{ display: "flex" }}>
-          {row.map((val, colIdx) => (
-            <MatrixEntry
-              key={`${rowIdx}-${colIdx}`}
-              row={rowIdx}
-              col={colIdx}
-              value={val}
-              entryBoxSize="40px"
-              onEntryChange={handleEntryChange}
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+      {values.map((row, r) => (
+        <div key={r} style={{ display: "flex", gap: 4 }}>
+          {row.map((cell, c) => (
+            <input
+              key={c}
+              type="text"
+              value={cell} // Pulls directly from parent state
+              onChange={(e: ChangeEvent<HTMLInputElement>) => 
+                setValues(r, c, e.target.value) // Pushes directly to parent state instantly
+              }
+              style={{
+                width: 50,
+                textAlign: "center",
+                background: "#1e293b",
+                border: "1px solid #334155",
+                borderRadius: 4,
+                color: "#38bdf8",
+                padding: "4px 0",
+                fontFamily: "monospace",
+              }}
             />
           ))}
         </div>

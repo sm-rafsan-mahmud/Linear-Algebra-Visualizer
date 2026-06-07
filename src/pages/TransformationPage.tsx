@@ -39,6 +39,7 @@ export default function TransformationPage() {
     setMatrices(m => {
       const updated = [...m, newMatrix];
       setSelectedIdx(updated.length - 1);
+      setNameID("");
       return updated;
     });
   }
@@ -104,15 +105,33 @@ export default function TransformationPage() {
   }
 
   function handleResult(expression: string) {
-    try {
-      const scope = buildScope(matrices);
-      const raw = math.evaluate(expression, scope);
-      setResult(NormalizeMatrix(raw));
-    } catch (err) {
-      console.error("Error evaluating expression:", err);
-      setResult([["Error: Invalid expression"]]);
-    }
+  try {
+    const scope = buildScope(matrices);
+    const raw = math.evaluate(expression, scope);
+    
+    // 1. Format the math.js result back into a string[][] for your UI
+    const formattedValues = NormalizeMatrix(raw);
+
+    // 2. Create a new matrix object for the result
+    // Tip: You can name it "Ans", or use a dynamic letter like "C"
+    const resultMatrix: MatrixData = {
+      nameID: "Ans", 
+      values: formattedValues
+    };
+
+    // 3. Append it to your existing matrices array
+    setMatrices(prevMatrices => {
+      const updated = [...prevMatrices, resultMatrix];
+      // Automatically highlight/select the newly generated matrix
+      setSelectedIdx(updated.length - 1); 
+      return updated;
+    });
+
+  } catch (err) {
+    console.error("Error evaluating expression:", err);
+    alert("Invalid expression! Check your matrix names and dimensions.");
   }
+}
 
   const { mountRef, setCameraPosition, CAM_3D, CAM_2D } = useTransformationPage();
 
