@@ -1,12 +1,8 @@
 import * as THREE from 'three'
-import { Line2 } from 'three/addons/lines/Line2.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
-import { createAxes } from '../lib/createAxes';
-import { createAxisLabels } from '../lib/createAxisLabels';
-import { createGrid, disposeGrid } from '../lib/createGrid';
-import { createCoordinates } from '../lib/createCoordinates';
-import { useVectors } from './useVectors';
+import { useGrid } from './useGrid';
+import type { AxisLabelsObject } from '../lib/types';
 
 // TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
 // TODO: Start work on transformations.
@@ -18,41 +14,43 @@ export function useTransformationPage() {
     const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null)
     const activeCameraRef = useRef<'2d' | '3d'>('3d')
     const controlsRef = useRef<OrbitControls | null>(null)
-    const labelsRef = useRef<{ xLbl: THREE.Mesh, yLbl: THREE.Mesh, zLbl: THREE.Mesh }>(null)
-    const zAxisRef = useRef<Line2 | null>(null) // only need the zAxis one because the other two are unchanging (may change)
+    const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
+    const isMountedRef = useRef<boolean>(false)
+    const lastZoomTime = useRef(0) // prevents the custom scroll function from working too fast on trackpads
 
     // camera position constants
     const CAM_3D = 0
     const CAM_2D = 1
 
-    // logical constants
-    const GRID_SIZE       = 10;
-    const GRID_STEP       = 1;
-    const MAJOR_GRID_STEP = 5 * GRID_STEP;
-
     const {
+        drawAxes,
+        drawGrid,
+        disposeAllGridObjects,
+        resizeGrid,
         newVector,
         applyScalarMultiply,
         applyVectorAdd
-    } = useVectors({sceneRef, gridSize: GRID_SIZE})
+    } = useGrid({ sceneRef, axisLabelsRef, isMountedRef })
 
     const setCameraPosition = (position: number) => {
+        if (!axisLabelsRef.current || !controlsRef.current) return
+        
         if (position === CAM_3D) {
-            labelsRef.current!.zLbl.visible = true
-            zAxisRef.current!.visible = true
-            controlsRef.current!.enabled = true
+            axisLabelsRef.current.zLbl.visible = true
+            controlsRef.current.enabled = true
             activeCameraRef.current = '3d'
         
         } else if (position === CAM_2D) {
-            labelsRef.current!.zLbl.visible = false
-            zAxisRef.current!.visible = false
-            controlsRef.current!.enabled = false
+            axisLabelsRef.current.zLbl.visible = false
+            controlsRef.current.enabled = false
             activeCameraRef.current = '2d'
+        
         }
     }
 
     useEffect(() => {
         const mount = mountRef.current!
+        isMountedRef.current = true
 
         const width = mount.clientWidth
         const height = mount.clientHeight
@@ -65,6 +63,8 @@ export function useTransformationPage() {
         const scene = new THREE.Scene()
         sceneRef.current = scene
 
+        scene.background = new THREE.Color(0x002233)
+
         // PerspectiveCamera for 3D view
         const camera = new THREE.PerspectiveCamera(
           75,
@@ -73,6 +73,10 @@ export function useTransformationPage() {
           1000
         )
         perspectiveCameraRef.current = camera;
+
+        camera.position.set(4, -17, 15)
+        camera.up.set(0, 0, 1)
+        camera.lookAt(new THREE.Vector3(0, 0, 0))
 
         // OrthographicCamera for 2D view—ensures vectors have the correct length.
         const frustumSize = 24
@@ -110,34 +114,27 @@ export function useTransformationPage() {
             }
         })
         resizeObserver.observe(mount)
-    
-        camera.position.set(15, 15, 15)
-        camera.up.set(0, 0, 1)
-        camera.lookAt(new THREE.Vector3(0, 0, 0))
 
         controlsRef.current = new OrbitControls(camera, renderer.domElement)
+        controlsRef.current.enableZoom = false
 
         // grid & axes
-        const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
-        const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
+        drawGrid()
+        drawAxes()
+        
+        // event listener for custom zoom controls
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault()
 
-        const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
-        zAxisRef.current = axes.zAxis
+            const now = Date.now()
+            if (now - lastZoomTime.current < 85) return
+            lastZoomTime.current = now
 
-        async function initLabels() {
-            const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
-            const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
-            if (!isMounted) {
-                scene.remove(axisLabels.xLbl, axisLabels.yLbl, axisLabels.zLbl)
-                scene.remove(...coords)
-                
-                return
-            }
-            labelsRef.current = axisLabels
+            const direction = e.deltaY > 0 ? 'out' : 'in'
+            resizeGrid(direction)
         }
 
-        let isMounted = true
-        initLabels()
+        mount.addEventListener('wheel', handleWheel, { passive: false })
 
         let animationId: number
 
@@ -152,8 +149,8 @@ export function useTransformationPage() {
                 : perspectiveCameraRef.current!
 
             // labelsRef becomes non-null asynchronously.
-            if (labelsRef.current) {
-                const { xLbl, yLbl, zLbl } = labelsRef.current
+            if (axisLabelsRef.current) {
+                const { xLbl, yLbl, zLbl } = axisLabelsRef.current
                 const is3D = activeCameraRef.current === '3d'
 
                 xLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
@@ -164,27 +161,21 @@ export function useTransformationPage() {
 
             }
 
-
             renderer.render(scene, activeCamera)
         }
 
         animate();
 
         return () => {
-            isMounted = false
+            isMountedRef.current = false
             cancelAnimationFrame(animationId)
             if(controlsRef.current) {
                 controlsRef.current.dispose()
             }
             resizeObserver.disconnect()
 
-            disposeGrid(sceneRef.current!, gridObjects)
-            disposeGrid(sceneRef.current!, majorGridObjects)
-            scene.remove(axes.xAxis, axes.yAxis, axes.zAxis)
-            
-            if (labelsRef.current) {
-                scene.remove(labelsRef.current!.xLbl, labelsRef.current!.yLbl, labelsRef.current!.zLbl)
-            }
+            disposeAllGridObjects()
+            mount.removeEventListener('wheel', handleWheel)
 
             renderer.dispose()
             mount.removeChild(renderer.domElement)

@@ -5,22 +5,37 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 
 export function createGrid(
     scene: THREE.Scene,
-    size: number,
+    realSize: number,
+    currSize: number,
     step: number,
     color: number,
     linewidth: number = 2
 ): LineSegments2 {
     const points: number[] = []
 
-    for (let i = -size; i <= size; i += step) {
-        if (i !== 0) {
-            points.push(-size, i , 0,  size, i, 0)
+    // boundaries: irrelevant to grid size
+    points.push(-realSize, -realSize, 0, -realSize,  realSize, 0)
+    points.push(-realSize, -realSize, 0,  realSize, -realSize, 0)
+    points.push(-realSize,  realSize, 0,  realSize,  realSize, 0)
+    points.push( realSize, -realSize, 0,  realSize,  realSize, 0)
+
+    // ratio of realSize to currSize is needed for proper scaling.
+    const ratio = realSize / currSize
+
+    // need to find largest mult. of step that is <= realSize.
+    const maxStep = (currSize - (currSize % step)) * ratio
+
+    const epsilon = 1e-9        // needed to help fight floating point errors causing the function to create one fewer line than necessary
+
+    for (let i = -maxStep; i <= maxStep + epsilon; i += step * ratio) {
+        if (Math.abs(i) > epsilon) {
+            points.push(-realSize, i, 0, realSize, i, 0)
         }
     }
 
-    for (let i = -size; i <= size; i+= step) {
-        if (i !== 0) {
-            points.push(i, -size, 0, i, size, 0)
+    for (let i = -maxStep; i <= maxStep + epsilon; i += step * ratio) {
+        if (Math.abs(i) > epsilon) {
+            points.push(i, -realSize, 0, i, realSize, 0)
         }
     }
 
@@ -45,6 +60,6 @@ export function createGrid(
  */
 export function disposeGrid(scene: THREE.Scene, grid: LineSegments2): void {
     scene.remove(grid)
-    grid.geometry.dispose()
-    ;(grid.material as THREE.Material).dispose()
+    grid.geometry.dispose();
+    (grid.material as THREE.Material).dispose()
 }

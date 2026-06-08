@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
+import type { AxesObject } from './types'
 
 
 export function createAxes(
@@ -11,7 +12,7 @@ export function createAxes(
     yColor: number,
     zColor: number,
     linewidth: number = 3
-): { xAxis: Line2, yAxis: Line2, zAxis: Line2 } {
+): AxesObject {
     function makeLine(points: [number, number, number, number, number, number], color: number): Line2 {
         const geometry = new LineGeometry()
         geometry.setPositions(points)
@@ -27,8 +28,26 @@ export function createAxes(
  
     const xAxis = makeLine([-size, 0, 0, size, 0, 0], xColor)
     const yAxis = makeLine([0, -size, 0, 0, size, 0], yColor)
-    const zAxis = makeLine([0, 0, -size + 1, 0, 0, size - 1], zColor)
+    const zAxis = makeLine([0, 0, -size, 0, 0, size], zColor)
  
     scene.add(xAxis, yAxis, zAxis)
     return {xAxis, yAxis, zAxis}
+}
+
+export function disposeAxes(scene: THREE.Scene, axes: AxesObject) {
+    const xAxis = axes.xAxis
+    const yAxis = axes.yAxis
+    const zAxis = axes.zAxis
+
+    scene.remove(xAxis)
+    xAxis.geometry.dispose();
+    (xAxis.material as THREE.Material).dispose()
+
+    scene.remove(yAxis)
+    yAxis.geometry.dispose();
+    (yAxis.material as THREE.Material).dispose()
+
+    scene.remove(zAxis)
+    zAxis.geometry.dispose();
+    (zAxis.material as THREE.Material).dispose()
 }

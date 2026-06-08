@@ -3,6 +3,8 @@ import MatrixGrid from "../components/MatrixGrid";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
 import type { RowData, Page } from "../lib/types";
+import InputVector from "../components/Transformations/InputVector";
+import TempTransformControls from "../components/Transformations/TempTransformControls";
 
 interface TransformationPageProps {
   onNavigate: (page: Page) => void;
@@ -155,6 +157,8 @@ export default function TransformationPage({ onNavigate }: TransformationPagePro
           display: "flex",
           gap: 8
         }}>
+          <InputVector onNewVector={newVector} />
+          <TempTransformControls onScalarApply={applyScalarMultiply} onAddApply={applyVectorAdd}/>
           <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
           <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
         </div>

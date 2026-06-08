@@ -1,59 +1,77 @@
 import * as THREE from 'three'
-import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { Font, FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { makeLabel } from './makeLabel'
+
+let cachedFont: Font | null = null
+
+async function getFont(): Promise<Font> {
+    if (cachedFont) return cachedFont
+    const loader = new FontLoader()
+    cachedFont = await loader.loadAsync(
+        'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
+    )
+    return cachedFont
+}
 
 export async function createCoordinates(
     scene: THREE.Scene,
+    sizeRatio: number,
     step: number,
     numLabels: number,
     color: number
 ): Promise<THREE.Mesh[]> {
-    let axis = 'x' as 'x' | 'y' | 'z'
-    const loader = new FontLoader()
-    const font = await loader.loadAsync(
-        'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
-    )
+    const font = await getFont()
 
     const coords: THREE.Mesh[] = []
+    
+    // x-axis labels
+    for (let n = -(numLabels - 1); n < numLabels; n++) {
+        const i = parseFloat((n * step).toPrecision(10))
+        let offset = 0.35
+        if (i < 0)
+            offset = 0.45
 
-    for (let i = 0; i < 3; i++) {
-        for (let j = -step * (numLabels - 1); j < step * numLabels; j += step) {
-            if (i === 0 && j === 0) {       // ensure we only create one zero.
-                coords.push(makeLabel(j + '', color, { x: -0.4, y: -0.4, z: 0 }, font))
-            
-            } else if (j !== 0) {
-                let coord: THREE.Mesh; // only used if axis == 'z' because we need to set the rotation then.
-                let offset = 0.35
-                if (j < 0)
-                    offset = 0.45
-                switch(axis) {
-                    case 'x':
-                        coords.push(makeLabel(j + '', color, { x: j - offset, y: -0.4, z: 0 }, font))
-                        break
-                    case 'y':
-                        coords.push(makeLabel(j + '', color, { x: -offset, y: j - 0.4, z: 0 }, font))
-                        break
-                    case 'z':
-                        coord = makeLabel(j + '', color, { x: -offset, y: 0, z: j }, font)
-                        coord.setRotationFromAxisAngle(
-                            new THREE.Vector3(1, 0, 0),
-                            Math.PI / 2
-                        )
-                        coords.push(coord)
-                        break
-                }
-            }
-            
+        coords.push(makeLabel(i + '', color, { x: i * sizeRatio - offset, y: -0.4, z: 0 }, font))
+    }
+
+    // y-axis labels
+    for (let n = -(numLabels - 1); n < numLabels; n++) {
+        const i = parseFloat((n * step).toPrecision(10))
+        if (i !== 0) {      // prevents creation of more than one 0 label
+            let offset = 0.35
+            if (i < 0)
+                offset = 0.45
+
+            coords.push(makeLabel(i + '', color, { x: -offset, y: i * sizeRatio - 0.4, z: 0 }, font))
         }
+    }
 
-        if (axis === 'x') {
-            axis = 'y'
-        
-        } else if (axis === 'y') {
-            axis = 'z'
+    // z-axis labels
+    for (let n = -(numLabels - 1); n < numLabels; n++) {
+        const i = parseFloat((n * step).toPrecision(10))
+        if (i !== 0) {      // prevents creation of more than one 0 label
+            let offset = 0.35
+            if (i < 0) {
+                offset = 0.45
+            }
+            // we need to store the coord because we need to set it's rotation later.
+            const coord = makeLabel(i + '', color, { x: -offset, y: 0, z: i * sizeRatio }, font) 
+            coord.setRotationFromAxisAngle(
+                new THREE.Vector3(1, 0, 0),
+                Math.PI / 2
+            )
+            coords.push(coord)
         }
     }
 
     scene.add(...coords)
     return coords
+}
+
+export function disposeCoordinates(scene: THREE.Scene, coords: THREE.Mesh[]) {
+    for (const coord of coords) {
+        scene.remove(coord)
+        coord.geometry.dispose();
+        (coord.material as THREE.Material).dispose()
+    }
 }
