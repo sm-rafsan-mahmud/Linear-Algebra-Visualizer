@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import MatrixGrid from "../components/MatrixGrid";
+import Matrix from "../components/Matrix";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
 import type { RowData, Page } from "../lib/types";
@@ -125,7 +125,7 @@ export default function TransformationPage({ onNavigate }: TransformationPagePro
         <div style={{ marginTop: 20 }}>
           <h3>Matrix</h3>
 
-          <MatrixGrid
+          <Matrix
             values={matrix}
             setValues={setMatrix}
           />
