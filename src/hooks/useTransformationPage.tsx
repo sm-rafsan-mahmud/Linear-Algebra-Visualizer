@@ -5,29 +5,8 @@ import { useEffect, useRef } from "react";
 import { createAxes } from '../lib/createAxes';
 import { createAxisLabels } from '../lib/createAxisLabels';
 import { createGrid, disposeGrid } from '../lib/createGrid';
-import { createVector } from '../lib/createVector';
-import type { VectorObject } from '../lib/types';
-
-function getRandomColor() {
-  const h = Math.random() * 360         // any hue
-  const s = 100                         // 100% saturations
-  const l = 55 + Math.random() * 20     // 55–75% lightness
-
-  // HSL → RGB conversion
-  const a = s / 100
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12
-    const color = l / 100 - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-    return Math.round(255 * color)
-  };
-
-  const r = f(0)
-  const g = f(8)
-  const b = f(4)
-
-  // Pack into a single integer the way Three.js expects
-  return (r << 16) | (g << 8) | b
-}
+import { createCoordinates } from '../lib/createCoordinates';
+import { useVectors } from './useVectors';
 
 // TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
 // TODO: Start work on transformations.
@@ -46,28 +25,16 @@ export function useTransformationPage() {
     const CAM_3D = 0
     const CAM_2D = 1
 
-    const vectors: VectorObject[] = [];
+    // logical constants
+    const GRID_SIZE       = 10;
+    const GRID_STEP       = 1;
+    const MAJOR_GRID_STEP = 5 * GRID_STEP;
 
-    const newVector = (x: number, y: number, z: number) => {
-        vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
-    }
-
-    const scalarMultiply = (s: number) => {
-        const v: VectorObject = vectors[vectors.length - 1]
-        const x = s * v.pos.x
-	    const y = s * v.pos.y
-	    const z = s * v.pos.z
-	    vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
-    }
-
-    const vectorAdd = () => {
-        const u: VectorObject = vectors[vectors.length - 2]
-        const v: VectorObject = vectors[vectors.length - 1]
-        const x = u.pos.x + v.pos.x
-	    const y = u.pos.y + v.pos.y
-	    const z = u.pos.z + v.pos.z
-        vectors.push(createVector(sceneRef.current!, {x, y, z}, getRandomColor()))
-    }
+    const {
+        newVector,
+        applyScalarMultiply,
+        applyVectorAdd
+    } = useVectors({sceneRef, gridSize: GRID_SIZE})
 
     const setCameraPosition = (position: number) => {
         if (position === CAM_3D) {
@@ -151,16 +118,19 @@ export function useTransformationPage() {
         controlsRef.current = new OrbitControls(camera, renderer.domElement)
 
         // grid & axes
-        const gridObjects = createGrid(sceneRef.current, 10, 1, 0xaaaaaa)
-        const majorGridObjects = createGrid(sceneRef.current, 10, 5, 0xffffff)
+        const gridObjects = createGrid(sceneRef.current, GRID_SIZE, GRID_STEP, 0xaaaaaa)
+        const majorGridObjects = createGrid(sceneRef.current, GRID_SIZE, MAJOR_GRID_STEP, 0xffffff)
 
         const axes = createAxes(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
         zAxisRef.current = axes.zAxis
 
         async function initLabels() {
             const axisLabels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
+            const coords = await createCoordinates(scene, MAJOR_GRID_STEP, GRID_SIZE / MAJOR_GRID_STEP, 0xffffff)
             if (!isMounted) {
                 scene.remove(axisLabels.xLbl, axisLabels.yLbl, axisLabels.zLbl)
+                scene.remove(...coords)
+                
                 return
             }
             labelsRef.current = axisLabels
@@ -223,11 +193,11 @@ export function useTransformationPage() {
 
     return {
         mountRef,
-        newVector,
         setCameraPosition,
         CAM_3D,
         CAM_2D,
-        scalarMultiply,
-        vectorAdd
+        newVector,
+        applyScalarMultiply,
+        applyVectorAdd
     }
 }

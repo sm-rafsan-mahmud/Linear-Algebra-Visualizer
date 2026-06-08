@@ -21,12 +21,26 @@ export function buildScope(matrices: MatrixData[]) {
   return scope;
 }
 
+<<<<<<< HEAD
 export default function TransformationPage() {
   const [rows, setRows] = useState<RowData[]>([{ keyId: 1, value: "" }]);
 
   const addNewBox = () => {
     const maxId = rows.reduce((max, row) => (row.keyId > max ? row.keyId : max), 0);
     setRows([...rows, { keyId: maxId + 1, value: "" }]);
+=======
+export default function TransformationPage({ onNavigate }: TransformationPageProps) {
+  // TEXT ROWS (VBox)
+  // -------------------------
+  
+  const [rows, setRows] = useState<RowData[]>([
+    { id: 1, value: "" },
+  ]);
+  const addRow = () => {
+    const maxId = rows.reduce((max, row) => (row.id > max ? row.id : max), 0);
+    const nextId = maxId + 1;
+    setRows([...rows, { id: nextId, value: "" }]);
+>>>>>>> refs/remotes/origin/main
   };
 
   const [matrices, setMatrices] = useState<MatrixData[]>([]);
@@ -187,7 +201,15 @@ export default function TransformationPage() {
         <VBox
           rows={rows}
           onRowCellChange={(id, val) =>
+<<<<<<< HEAD
             setRows(prev => prev.map(r => r.keyId === id ? { ...r, value: val } : r))
+=======
+            setRows((prev) =>
+              prev.map((r) =>
+                r.id === id ? { ...r, value: val } : r
+              )
+            )
+>>>>>>> refs/remotes/origin/main
           }
         />
 
