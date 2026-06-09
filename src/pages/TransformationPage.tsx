@@ -130,7 +130,7 @@ export default function TransformationPage() {
       return updated;
     });
     setResult(formattedValues); // Also update the separate result display if you have one
-    showVector(raw); // Call your function to visualize the result in 3D
+   
   } catch (err) {
     console.error("Error evaluating expression:", err);
     alert("Invalid expression! Check your matrix names and dimensions.");
