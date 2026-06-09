@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import HBox from "./HBox"; 
-=======
-import HBox from "./HBox";
->>>>>>> refs/remotes/origin/main
 import type { RowData } from "../lib/types";
 
 interface VBoxProps {

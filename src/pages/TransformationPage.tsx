@@ -7,11 +7,14 @@ import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";
 import NormalizeMatrix from "../utils/NormalizeMatrix";
 import { matrix } from "mathjs";
+import InputVector from "../components/Transformations/InputVector";
+import useVectors from "../hooks/useVectors";
 
 type MatrixData = {
   nameID: string;
   values: string[][];
 };
+
 
 export function buildScope(matrices: MatrixData[]) {
   const scope: Record<string, math.Matrix> = {};
@@ -118,7 +121,7 @@ export default function TransformationPage() {
       nameID: "Ans", 
       values: formattedValues
     };
-
+  
     // 3. Append it to your existing matrices array
     setMatrices(prevMatrices => {
       const updated = [...prevMatrices, resultMatrix];
@@ -127,14 +130,13 @@ export default function TransformationPage() {
       return updated;
     });
     setResult(formattedValues); // Also update the separate result display if you have one
-
+    showVector(raw); // Call your function to visualize the result in 3D
   } catch (err) {
     console.error("Error evaluating expression:", err);
     alert("Invalid expression! Check your matrix names and dimensions.");
   }
 }
   const { mountRef, setCameraPosition, CAM_3D, CAM_2D } = useTransformationPage();
-
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
 
