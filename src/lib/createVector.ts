@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import type { Point3D, ProjectionObject, VectorObject } from './types'
+import type { Point3D, VectorObject } from './types'
 
 const HEAD_RADIUS  = 0.15
 const HEAD_LENGTH  = 0.25          // world units, not a proportion of vector length
@@ -116,56 +116,4 @@ export function disposeVector(scene: THREE.Scene, vector: VectorObject) {
     vector.head.geometry.dispose();
     (vector.shaft.material as THREE.Material).dispose();
     (vector.head.material as THREE.Material).dispose();
-}
-
-export function createProjection(
-    scene: THREE.Scene,
-    pos: Point3D,
-    color: number,
-    realSize: number,
-    gridSize: number
-): ProjectionObject | null {
-    // adding null filler values keeps the vector & projection indices the same
-    if (isChopped(pos, gridSize)) { return null }
-    const scaledPos = getScaledPos(pos, realSize, gridSize)
-
-    // create the projection line
-    const projGeometry = new LineGeometry()
-    projGeometry.setPositions([
-        scaledPos.x, scaledPos.y, scaledPos.z,    // tip
-        scaledPos.x, scaledPos.y, 0               // foot on XY plane
-    ])
- 
-    const projMaterial = new LineMaterial({
-        color,
-        linewidth: 3,
-        dashed: true,
-        dashSize: 0.15,
-        gapSize:  0.1,
-        opacity:  0.5,
-        transparent: true,
-        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
-    })
- 
-    const line = new Line2(projGeometry, projMaterial)
-    line.computeLineDistances()
-    scene.add(line)
- 
-    // create the projection dot
-    const dot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, SEGMENTS, SEGMENTS),
-        new THREE.MeshBasicMaterial({ color })
-    )
-    dot.position.set(scaledPos.x, scaledPos.y, 0)
-    scene.add(dot)
-
-    return { line, dot, pos, color }
-}
-
-export function disposeProjection(scene: THREE.Scene, proj: ProjectionObject) {
-    scene.remove(proj.line, proj.dot)
-    proj.line.geometry.dispose();
-    (proj.line.material as THREE.Material).dispose()
-    proj.dot.geometry.dispose();
-    (proj.dot.material as THREE.Material).dispose()
 }

@@ -1,8 +1,9 @@
 import { useRef } from 'react'
 import * as THREE from 'three'
-import type { ProjectionObject, VectorObject } from '../lib/types'
-import { createProjection, createVector, disposeProjection, disposeVector } from '../lib/createVector'
+import type { PgramObject, VectorObject } from '../lib/types'
+import { createVector, disposeVector } from '../lib/createVector'
 import { scalarMultiply, vectorAdd } from '../lib/vectorMath'
+import { createPgramVis, disposePgramVis } from '../lib/createPgramVis'
 
 function getRandomColor() {
   const h = Math.random() * 360         // any hue
@@ -31,27 +32,26 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
     gridSizeRef: React.RefObject<number>
 }) {
     const vectorsRef = useRef<VectorObject[]>([])
-    const projectionsRef = useRef<(ProjectionObject | null)[]>([])
+    const pgramRef = useRef<PgramObject[]>([])
 
     const newVector = (x: number, y: number, z: number) => {
         const color = getRandomColor()
         vectorsRef.current.push(createVector(sceneRef.current!, {x, y, z}, color, realSize, gridSizeRef.current))
-        projectionsRef.current.push(createProjection(sceneRef.current!, {x, y, z}, color, realSize, gridSizeRef.current))
     }
 
     const applyScalarMultiply = (s: number) => {
         const v = vectorsRef.current[vectorsRef.current.length - 1]
         const color = getRandomColor()
 	    vectorsRef.current.push(createVector(sceneRef.current!, scalarMultiply(s, v), color, realSize, gridSizeRef.current))
-        projectionsRef.current.push(createProjection(sceneRef.current!, scalarMultiply(s, v), color, realSize, gridSizeRef.current))
     }
 
     const applyVectorAdd = () => {
         const u: VectorObject = vectorsRef.current[vectorsRef.current.length - 2]
         const v: VectorObject = vectorsRef.current[vectorsRef.current.length - 1]
         const color = getRandomColor()
+        const pos = vectorAdd(u, v)
         vectorsRef.current.push(createVector(sceneRef.current!, vectorAdd(u, v), color, realSize, gridSizeRef.current))
-        projectionsRef.current.push(createProjection(sceneRef.current!, vectorAdd(u, v), color, realSize, gridSizeRef.current))
+        pgramRef.current.push(createPgramVis(u, v, pos, color, realSize, gridSizeRef.current, sceneRef.current!))
     }
 
     const redrawVectors = () => {
@@ -61,36 +61,22 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
             return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
         })
 
-        for (let i = 0; i < projectionsRef.current.length; i++) {
-            if (projectionsRef.current[i]) {
-                const { pos, color } = projectionsRef.current[i]!
-                disposeProjection(sceneRef.current!, projectionsRef.current[i]!)
-                projectionsRef.current[i] = createProjection(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
-            
-            } else {
-                const { pos, color } = vectorsRef.current[i]
-                projectionsRef.current[i] = createProjection(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
-            }
+        if (pgramRef.current.length > 0) {
+            pgramRef.current = pgramRef.current.map((pgram) => {
+                const { color, pos, u, v } = pgram
+                disposePgramVis(sceneRef.current!, pgram)
+                return createPgramVis(u, v, pos, color, realSize, gridSizeRef.current, sceneRef.current!)
+            })
         }
     }
 
     const disposeVectors = () => {
         for (let i = 0; i < vectorsRef.current.length; i++) {
-            const v = vectorsRef.current[i]
-            sceneRef.current!.remove(v.shaft, v.head);
-            v.shaft.geometry.dispose();
-            (v.shaft.material as THREE.Material).dispose()
-            v.head.geometry.dispose();
-            (v.head.material as THREE.Material).dispose()
+            disposeVector(sceneRef.current!, vectorsRef.current[i])
+        }
 
-            if (projectionsRef.current[i]) {
-                const p = projectionsRef.current[i]!
-                sceneRef.current!.remove(p.line, p.dot)
-                p.line.geometry.dispose();
-                (p.line.material as THREE.Material).dispose()
-                p.dot.geometry.dispose();
-                (p.dot.material as THREE.Material).dispose()
-            }
+        for (let i = 0; i < pgramRef.current.length; i++) {
+            disposePgramVis(sceneRef.current!, pgramRef.current[i])
         }
     }
 
