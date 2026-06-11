@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 
+export type MatrixData = {
+    nameID: string;
+    values: string[][];
+}
+
 export type Page = 'home' | 'transformation'
 export type Point3D = { x: number, y: number, z: number }
 export type VectorObject = {

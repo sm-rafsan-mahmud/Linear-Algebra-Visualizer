@@ -1,5 +1,4 @@
 import { useState, type ChangeEvent } from "react";
-import Matrix from "../components/Matrix";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
 import type { RowData } from "../lib/types";
@@ -7,14 +6,13 @@ import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";
 import NormalizeMatrix from "../utils/NormalizeMatrix";
 import { matrix } from "mathjs";
-import InputVector from "../components/Transformations/InputVector";
-import useVectors from "../hooks/useVectors";
+import MatrixUI from "../components/MatrixUI";
+import formatExpressionName from "../utils/formatExpressionName";
 
 type MatrixData = {
   nameID: string;
   values: string[][];
 };
-
 
 export function buildScope(matrices: MatrixData[]) {
   const scope: Record<string, math.Matrix> = {};
@@ -36,6 +34,7 @@ export default function TransformationPage() {
   const [nameID, setNameID] = useState("A");
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [result, setResult] = useState<string[][]>([[""]]);
+  const [resultMatrices, setResultMatrices] = useState<(MatrixData | null)[]>([]);
 
   function handleAddMatrix() {
     const newMatrix: MatrixData = { nameID, values: [[""]] };
@@ -45,12 +44,6 @@ export default function TransformationPage() {
       setNameID("");
       return updated;
     });
-  }
-
-  function handleDeleteMatrix() {
-    if (selectedIdx === null) return;
-    setMatrices(m => m.filter((_, i) => i !== selectedIdx));
-    setSelectedIdx(null);
   }
 
   function handleNameIDChange(e: ChangeEvent<HTMLInputElement>) {
@@ -93,35 +86,9 @@ export default function TransformationPage() {
     ));
   }
 
-  // Store raw string, let MatrixParser handle evaluation in buildScope
-  function handleValueChange(matIdx: number, row: number, col: number, newValue: string) {
-    setMatrices(m => m.map((mat, i) =>
-      i === matIdx
-        ? {
-            ...mat,
-            values: mat.values.map((r, ri) =>
-              r.map((val, ci) => (ri === row && ci === col ? newValue : val))
-            )
-          }
-        : mat
-    ));
-  }
-
-  function handleResult(expression: string) {
-  try {
-    const scope = buildScope(matrices);
-    const raw = math.evaluate(expression, scope);
-    
-    // 1. Format the math.js result back into a string[][] for your UI
-    const formattedValues = NormalizeMatrix(raw);
-
-    // 2. Create a new matrix object for the result
-    // Tip: You can name it "Ans", or use a dynamic letter like "C"
-    const resultMatrix: MatrixData = {
-      nameID: "Ans", 
-      values: formattedValues
-    };
+  function recomputeAll(updatedMatrices: MatrixData[], UpdatedRows = rows) {
   
+<<<<<<< HEAD
     // 3. Append it to your existing matrices array
     setMatrices(prevMatrices => {
       const updated = [...prevMatrices, resultMatrix];
@@ -135,8 +102,69 @@ export default function TransformationPage() {
     console.error("Error evaluating expression:", err);
     alert("Invalid expression! Check your matrix names and dimensions.");
   }
+=======
+  UpdatedRows.forEach((row, i) => {
+    if (!row.value.trim()) {
+      setResultMatrices(prev => {
+        const next = [...prev];
+        while (next.length <= i) next.push(null);
+        next[i] = null;
+        return next;
+      });
+      return;
+    }
+    try {
+      const scope = buildScope(updatedMatrices);
+      const raw = math.evaluate(row.value, scope);
+      const formattedValues = NormalizeMatrix(raw);
+      setResultMatrices(prev => {
+        const next = [...prev];
+        while (next.length <= i) next.push(null);
+        next[i] = { nameID: formatExpressionName(row.value), values: formattedValues };
+        return next;
+      });
+    } catch {
+      setResultMatrices(prev => {
+        const next = [...prev];
+        while (next.length <= i) next.push(null);
+        next[i] = null;
+        return next;
+      });
+    }
+    console.log("recomputeAll called", updatedMatrices, UpdatedRows);
+    UpdatedRows.forEach((row, i)=>{
+      console.log("Row: ", i, row.value);
+    })
+  });
+>>>>>>> 44a48d6 (Added live update feature for computation & all arrays are now working properly)
 }
+function handleValueChange(targetIdx: number, row: number, col: number, newValue: string) {
+  setMatrices(m => {
+    const updated = m.map((mat, i) =>
+      i === targetIdx
+        ? { ...mat, values: mat.values.map((r, ri) =>
+            r.map((val, ci) => (ri === row && ci === col ? newValue : val))
+          )}
+        : mat
+    );
+    recomputeAll(updated);
+    return updated;
+  });
+}
+
+function handleDeleteMatrix() {
+  if (selectedIdx === null) return;
+  setMatrices(m => {
+    const updated = m.filter((_, i) => i !== selectedIdx);
+    recomputeAll(updated);
+    return updated;
+  });
+  setSelectedIdx(null);
+}
+
+
   const { mountRef, setCameraPosition, CAM_3D, CAM_2D } = useTransformationPage();
+
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
 
@@ -170,52 +198,48 @@ export default function TransformationPage() {
           Add Formula Box
         </button>
 
-        <button
-          onClick={() => handleResult(rows.map(r => r.value).join(" "))}
-          style={{
-            padding: "10px 15px",
-            background: "#22c55e",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "bold",
-            color: "#0f172a",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
-        >
-          Compute Result
-        </button>
-
         <VBox
           rows={rows}
-          onRowCellChange={(id, val) =>
-            setRows(prev => prev.map(r => r.keyId === id ? { ...r, value: val } : r))
-          }
+          onRowCellChange={(rowIdx, value) => {
+          const updatedRows = rows.map((r, i) => i === rowIdx? {...r, value} : r);
+          setRows(updatedRows)
+            recomputeAll(matrices, updatedRows);
+          }}
         />
 
-        {/* MATRICES */}
+        {/* USER MATRICES */}
         <div style={{ marginTop: 20 }}>
           {matrices.map((m, i) => (
-            <div
+            <MatrixUI
               key={i}
-              onClick={() => setSelectedIdx(i)}
-              style={{
-                outline: selectedIdx === i ? "2px solid #38bdf8" : "none",
-                padding: 8,
-                marginBottom: 12,
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-            >
-              <strong>{m.nameID}</strong>
-              <Matrix
-                nameID={m.nameID}
-                values={m.values}
-                setValues={(row, col, val) => handleValueChange(i, row, col, val)}
-              />
-            </div>
+              matrix={m}
+              index={i}
+              selectedIdx={selectedIdx}
+              setSelectedIdx={setSelectedIdx}
+              handleValueChange={handleValueChange}
+            />
           ))}
+        </div>
 
+        {/* RESULT MATRICES */}
+        <div>
+          {resultMatrices.map((m, i) => {
+            if (!m) return null;
+            return (
+              <MatrixUI
+                key={"r" + i}
+                matrix={m}
+                index={i}
+                selectedIdx={null}
+                setSelectedIdx={() => {}}
+                handleValueChange={() => {}}
+              />
+            );
+          })}
+        </div>
+
+        {/* MATRIX CONTROLS */}
+        <div style={{ marginTop: 20 }}>
           <label style={{ display: "block", marginTop: 12 }}>
             Matrix name:
             <input
@@ -236,7 +260,7 @@ export default function TransformationPage() {
           </div>
         </div>
 
-        {/* RESULT */}
+        {/* RESULT DISPLAY */}
         {result[0][0] !== "" && (
           <div style={{ marginTop: 16 }}>
             <strong style={{ fontSize: 13, color: "#94a3b8" }}>Result</strong>
@@ -272,7 +296,7 @@ export default function TransformationPage() {
           </div>
         )}
 
-        {/* MATRIX CONTROLS */}
+        {/* ROW/COL CONTROLS */}
         <div style={{
           marginTop: "auto",
           display: "flex",

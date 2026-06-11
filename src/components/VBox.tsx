@@ -29,7 +29,7 @@ export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) 
             key={row.keyId}
             rowIdx={index}
             value={row.value}
-            onCellChange={(r, v) => onRowCellChange(row.keyId, v)} 
+            onCellChange={(r, v) => onRowCellChange(index, v)} 
             />
         );
       })}
