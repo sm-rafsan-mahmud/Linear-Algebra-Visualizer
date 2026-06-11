@@ -88,21 +88,6 @@ export default function TransformationPage() {
 
   function recomputeAll(updatedMatrices: MatrixData[], UpdatedRows = rows) {
   
-<<<<<<< HEAD
-    // 3. Append it to your existing matrices array
-    setMatrices(prevMatrices => {
-      const updated = [...prevMatrices, resultMatrix];
-      // Automatically highlight/select the newly generated matrix
-      setSelectedIdx(updated.length - 1); 
-      return updated;
-    });
-    setResult(formattedValues); // Also update the separate result display if you have one
-   
-  } catch (err) {
-    console.error("Error evaluating expression:", err);
-    alert("Invalid expression! Check your matrix names and dimensions.");
-  }
-=======
   UpdatedRows.forEach((row, i) => {
     if (!row.value.trim()) {
       setResultMatrices(prev => {
@@ -136,7 +121,6 @@ export default function TransformationPage() {
       console.log("Row: ", i, row.value);
     })
   });
->>>>>>> 44a48d6 (Added live update feature for computation & all arrays are now working properly)
 }
 function handleValueChange(targetIdx: number, row: number, col: number, newValue: string) {
   setMatrices(m => {
