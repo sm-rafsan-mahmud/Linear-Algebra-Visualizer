@@ -24,7 +24,7 @@ export const MatrixEntry = ({
     const [rawValue, setRawValue] = useState(value);
     const [displayValue, setDisplayValue] = useState(value);
     const [isFocused, setIsFocused] = useState(false);
-    const [hasError, setHasError] = useState(false);
+    //const [hasError, setHasError] = useState(false);
 
 
 
@@ -45,10 +45,10 @@ export const MatrixEntry = ({
             // Evaluates mathematical expressions like "2 + 2" or "10 * 5"
             const result = rawValue || "0";
             setDisplayValue(String(result));
-            setHasError(false);
+            //setHasError(false);
        } catch(e) {
             // Safe fallback logic if user enters unparsable text
-            setHasError(true);
+            //setHasError(true);
             setDisplayValue(rawValue);
        }
        onBlur?.(row, col);
