@@ -26,7 +26,7 @@ export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) 
 
         return ( 
           <HBox
-            key={row.keyId}
+            key={row.id}
             rowIdx={index}
             value={row.value}
             onCellChange={(r, v) => onRowCellChange(index, v)} 
