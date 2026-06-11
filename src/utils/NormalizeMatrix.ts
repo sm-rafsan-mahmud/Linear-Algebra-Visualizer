@@ -1,4 +1,3 @@
-import * as math from "mathjs";
 
 /**
  * Converts a math.js matrix evaluation result into a standard string[][]

@@ -1,12 +1,11 @@
 import type { ChangeEvent } from "react";
 
 interface MatrixProps {
-  nameID: string;
   values: string[][];
   setValues: (row: number, col: number, value: string) => void;
 }
 
-export default function Matrix({ nameID, values, setValues }: MatrixProps) {
+export default function Matrix({values, setValues }: MatrixProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
       {values.map((row, r) => (
