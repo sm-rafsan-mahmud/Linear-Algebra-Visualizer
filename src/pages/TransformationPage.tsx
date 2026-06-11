@@ -7,6 +7,8 @@ import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";
 import NormalizeMatrix from "../utils/NormalizeMatrix";
 import { matrix } from "mathjs";
+import InputVector from "../components/Transformations/InputVector";
+import TempTransformControls from "../components/Transformations/TempTransformControls";
 
 type MatrixData = {
   nameID: string;
@@ -133,7 +135,15 @@ export default function TransformationPage() {
     alert("Invalid expression! Check your matrix names and dimensions.");
   }
 }
-  const { mountRef, setCameraPosition, CAM_3D, CAM_2D } = useTransformationPage();
+  const { 
+      mountRef,
+      setCameraPosition,
+      CAM_3D,
+      CAM_2D, 
+      newVector,
+      applyScalarMultiply,
+      applyVectorAdd
+  } = useTransformationPage();
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
@@ -290,8 +300,11 @@ export default function TransformationPage() {
       <div style={{ flex: 1, position: "relative" }}>
         <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
         <div style={{ position: "absolute", top: 20, left: 20, display: "flex", gap: 8 }}>
+          <InputVector onNewVector={newVector}/>
+          <TempTransformControls onScalarApply={applyScalarMultiply} onAddApply={applyVectorAdd} />
           <button onClick={() => setCameraPosition(CAM_3D)}>3D</button>
           <button onClick={() => setCameraPosition(CAM_2D)}>2D</button>
+          
         </div>
       </div>
 

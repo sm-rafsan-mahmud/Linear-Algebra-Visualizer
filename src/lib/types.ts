@@ -21,11 +21,15 @@ export type VectorObject = {
     pos:   Point3D,
     color: number
 }
-export type ProjectionObject = {
-    line: Line2,
-    dot: THREE.Mesh,
+
+export type PgramObject = {
+    uv: Line2 | null,
+    vu: Line2 | null,
+    pgram: THREE.Mesh,
+    color: number,
     pos: Point3D,
-    color: number
+    u: VectorObject,
+    v: VectorObject
 }
 
 export type RowData = {
