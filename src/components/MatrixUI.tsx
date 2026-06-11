@@ -1,4 +1,3 @@
-import React from "react";
 import type { MatrixData } from "../lib/types";
 import Matrix from "./Matrix";
 
@@ -38,7 +37,6 @@ export default function MatrixUI({
       <strong>{matrix.nameID}</strong>
 
       <Matrix
-        nameID={matrix.nameID}
         values={matrix.values}
         setValues={(row, col, val) =>
           handleValueChange(index, row, col, val)

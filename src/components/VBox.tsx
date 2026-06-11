@@ -4,9 +4,9 @@ import type { RowData } from "../lib/types";
 interface VBoxProps {
   rows: RowData[];
   onRowCellChange: (rowId: number, newValue: string) => void;
-  onDeleteRow?: (rowId: number) => void;
+  //onDeleteRow?: (rowId: number) => void;
 }
-export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) {
+export default function VBox({ rows, onRowCellChange }: VBoxProps) {
   return (
     <div style={{
       // position: "absolute",   // ← take it out of flex flow
@@ -21,15 +21,12 @@ export default function VBox({ rows, onRowCellChange, onDeleteRow }: VBoxProps) 
       padding: "8px",
     }}>
       {rows.map((row, index) => {
-        // Automatically re-calculates 1, 2, 3... sequentially when items are deleted!
-        const displayId = index + 1;
-
         return ( 
           <HBox
-            key={row.id}
+            key={row.keyId}
             rowIdx={index}
             value={row.value}
-            onCellChange={(r, v) => onRowCellChange(index, v)} 
+            onCellChange={(_, v) => onRowCellChange(index, v)} 
             />
         );
       })}
