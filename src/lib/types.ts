@@ -4,6 +4,10 @@ import { Line2 } from 'three/addons/lines/Line2.js'
 export type Page = 'home' | 'transformations'
 export type Point3D = { x: number, y: number, z: number }
 
+export type MatrixData ={
+    nameID: string;
+    values: string[][];
+}
 export type AxesObject = {
     xAxis: Line2,
     yAxis: Line2,

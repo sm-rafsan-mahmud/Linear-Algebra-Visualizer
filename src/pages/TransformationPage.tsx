@@ -25,17 +25,17 @@ export function buildScope(matrices: MatrixData[]) {
 }
 
 export default function TransformationPage() {
-  const [rows, setRows] = useState<RowData[]>([{ keyId: 1, value: "" }]);
+  const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
 
   const addNewBox = () => {
-    const maxId = rows.reduce((max, row) => (row.keyId > max ? row.keyId : max), 0);
-    setRows([...rows, { keyId: maxId + 1, value: "" }]);
+    const maxId = rows.reduce((max, row) => (row.id > max ? row.id : max), 0);
+    setRows([...rows, { id: maxId + 1, value: "" }]);
   };
 
   const [matrices, setMatrices] = useState<MatrixData[]>([]);
   const [nameID, setNameID] = useState("A");
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [result, setResult] = useState<string[][]>([[""]]);
+  //const [result, setResult] = useState<string[][]>([[""]]);
   const [resultMatrices, setResultMatrices] = useState<(MatrixData | null)[]>([]);
 
   function handleAddMatrix() {
@@ -245,42 +245,7 @@ function handleDeleteMatrix() {
             <button onClick={handleDeleteMatrix}>Delete Matrix</button>
           </div>
         </div>
-
-        {/* RESULT DISPLAY */}
-        {result[0][0] !== "" && (
-          <div style={{ marginTop: 16 }}>
-            <strong style={{ fontSize: 13, color: "#94a3b8" }}>Result</strong>
-            <div style={{
-              display: "inline-flex",
-              flexDirection: "column",
-              gap: 4,
-              marginTop: 6,
-              padding: "8px 12px",
-              background: "#1e293b",
-              borderRadius: 6,
-              border: "1px solid #334155",
-            }}>
-              {result.map((row, ri) => (
-                <div key={ri} style={{ display: "flex", gap: 8 }}>
-                  {row.map((cell, ci) => (
-                    <div key={ci} style={{
-                      minWidth: 40,
-                      textAlign: "center",
-                      padding: "4px 8px",
-                      background: "#0f172a",
-                      borderRadius: 4,
-                      fontSize: 14,
-                      color: "#38bdf8",
-                      fontFamily: "monospace",
-                    }}>
-                      {cell}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        
 
         {/* ROW/COL CONTROLS */}
         <div style={{
