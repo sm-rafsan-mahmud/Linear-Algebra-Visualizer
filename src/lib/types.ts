@@ -1,13 +1,20 @@
 import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 
-export type MatrixData = {
-    nameID: string;
-    values: string[][];
+export type Page = 'home' | 'transformations'
+export type Point3D = { x: number, y: number, z: number }
+
+export type AxesObject = {
+    xAxis: Line2,
+    yAxis: Line2,
+    zAxis: Line2
+}
+export type AxisLabelsObject = {
+    xLbl: THREE.Mesh,
+    yLbl: THREE.Mesh,
+    zLbl: THREE.Mesh
 }
 
-export type Page = 'home' | 'transformation'
-export type Point3D = { x: number, y: number, z: number }
 export type VectorObject = {
     shaft: Line2
     head:  THREE.Mesh
@@ -24,7 +31,8 @@ export type PgramObject = {
     u: VectorObject,
     v: VectorObject
 }
+
 export type RowData = {
-    keyId: number;     // Unique identifier for loops and state updates
+    id: number;     // Unique identifier for loops and state updates
     value: string;  // The actual formula or number inside the row's cell
 }
