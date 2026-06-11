@@ -23,7 +23,7 @@ export default function VBox({ rows, onRowCellChange }: VBoxProps) {
       {rows.map((row, index) => {
         return ( 
           <HBox
-            key={row.id}
+            key={row.keyId}
             rowIdx={index}
             value={row.value}
             onCellChange={(_, v) => onRowCellChange(index, v)} 

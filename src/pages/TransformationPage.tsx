@@ -149,7 +149,7 @@ function handleDeleteMatrix() {
 }
 
 
-  const { mountRef, setCameraPosition, CAM_3D, CAM_2D } = useTransformationPage();
+  const { mountRef, setCameraPosition, CAM_3D, CAM_2D, newVector, applyScalarMultiply, applyVectorAdd } = useTransformationPage();
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
