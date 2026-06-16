@@ -26,11 +26,14 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
     const coordsRef    = useRef<THREE.Mesh[] | null>(null)
 
     const {
-        newVector,
-        applyScalarMultiply,
-        applyVectorAdd,
         redrawVectors,
-        disposeVectors
+        disposeVectors,
+        setMatrixVector,
+        clearMatrixVector,
+        setResultVector,
+        clearResultVector,
+        setResultPgram,
+        clearResultPgram
     } = useVectors({ sceneRef, realSize: REAL_GRID_SIZE, gridSizeRef })
 
     const drawAxes = () => {
@@ -191,9 +194,12 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        newVector,
-        applyScalarMultiply,
-        applyVectorAdd
+        setMatrixVector,
+        clearMatrixVector,
+        setResultVector,
+        clearResultVector,
+        setResultPgram,
+        clearResultPgram
     }
 
 }

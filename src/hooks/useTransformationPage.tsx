@@ -27,9 +27,12 @@ export function useTransformationPage() {
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        newVector,
-        applyScalarMultiply,
-        applyVectorAdd
+        setMatrixVector,
+        clearMatrixVector,
+        setResultVector,
+        clearResultVector,
+        setResultPgram,
+        clearResultPgram
     } = useGrid({ sceneRef, axisLabelsRef, isMountedRef })
 
     const setCameraPosition = (position: number) => {
@@ -187,8 +190,11 @@ export function useTransformationPage() {
         setCameraPosition,
         CAM_3D,
         CAM_2D,
-        newVector,
-        applyScalarMultiply,
-        applyVectorAdd
+        setMatrixVector,
+        clearMatrixVector,
+        setResultVector,
+        clearResultVector,
+        setResultPgram,
+        clearResultPgram
     }
 }

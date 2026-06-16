@@ -1,8 +1,7 @@
 import { useRef } from 'react'
 import * as THREE from 'three'
-import type { PgramObject, VectorObject } from '../lib/types'
+import type { Point3D, PgramObject, VectorObject } from '../lib/types'
 import { createVector, disposeVector } from '../lib/createVector'
-import { scalarMultiply, vectorAdd } from '../lib/vectorMath'
 import { createPgramVis, disposePgramVis } from '../lib/createPgramVis'
 
 function getRandomColor() {
@@ -31,60 +30,132 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
     realSize: number,
     gridSizeRef: React.RefObject<number>
 }) {
-    const vectorsRef = useRef<VectorObject[]>([])
-    const pgramRef = useRef<PgramObject[]>([])
+    const matrixVectorsRef = useRef<(VectorObject | null)[]>([])
+    const resultVectorsRef = useRef<(VectorObject | null)[]>([])
+    const resultPgramsRef = useRef<(PgramObject | null)[]>([])
 
-    const newVector = (x: number, y: number, z: number) => {
+
+    const setMatrixVector = (matIdx: number, x: number, y: number, z: number) => {
+        // Dispose any existing vector for this matrix slot
+        const existing = matrixVectorsRef.current[matIdx]
+        if (existing) {
+            disposeVector(sceneRef.current!, existing)
+        }
+
         const color = getRandomColor()
-        vectorsRef.current.push(createVector(sceneRef.current!, {x, y, z}, color, realSize, gridSizeRef.current))
+        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current)
+
+        // Grow the array with nulls if needed, then assign
+        while (matrixVectorsRef.current.length <= matIdx) {
+            matrixVectorsRef.current.push(null)
+        }
+        matrixVectorsRef.current[matIdx] = newVec
     }
 
-    const applyScalarMultiply = (s: number) => {
-        const v = vectorsRef.current[vectorsRef.current.length - 1]
-        const color = getRandomColor()
-	    vectorsRef.current.push(createVector(sceneRef.current!, scalarMultiply(s, v), color, realSize, gridSizeRef.current))
+    const clearMatrixVector = (matIdx: number) => {
+        const existing = matrixVectorsRef.current[matIdx]
+        if (existing) {
+            disposeVector(sceneRef.current!, existing)
+            matrixVectorsRef.current[matIdx] = null
+        }
     }
 
-    const applyVectorAdd = () => {
-        const u: VectorObject = vectorsRef.current[vectorsRef.current.length - 2]
-        const v: VectorObject = vectorsRef.current[vectorsRef.current.length - 1]
+    const setResultVector = (rowIdx: number, x: number, y: number, z: number) => {
+        const existing = resultVectorsRef.current[rowIdx]
+        if (existing) disposeVector(sceneRef.current!, existing)
+
         const color = getRandomColor()
-        const pos = vectorAdd(u, v)
-        vectorsRef.current.push(createVector(sceneRef.current!, vectorAdd(u, v), color, realSize, gridSizeRef.current))
-        pgramRef.current.push(createPgramVis(u, v, pos, color, realSize, gridSizeRef.current, sceneRef.current!))
+        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current)
+
+        while (resultVectorsRef.current.length <= rowIdx) resultVectorsRef.current.push(null)
+        resultVectorsRef.current[rowIdx] = newVec
+    }
+
+    const clearResultVector = (rowIdx: number) => {
+        const existing = resultVectorsRef.current[rowIdx]
+        if (existing) {
+            disposeVector(sceneRef.current!, existing)
+            resultVectorsRef.current[rowIdx] = null
+        }
+    }
+
+    const setResultPgram = (
+        rowIdx: number,
+        u: Point3D,
+        v: Point3D,
+        sum: Point3D
+    ) => {
+        const existing = resultPgramsRef.current[rowIdx]
+        if (existing) disposePgramVis(sceneRef.current!, existing)
+
+        // createPgramVis expects VectorObjects, but only uses .pos from them
+        // so we construct minimal stand-ins
+        const uObj  = { pos: u }  as VectorObject
+        const vObj  = { pos: v }  as VectorObject
+
+        const color = getRandomColor()
+        const pgram = createPgramVis(uObj, vObj, sum, color, realSize, gridSizeRef.current, sceneRef.current!)
+
+        while (resultPgramsRef.current.length <= rowIdx) resultPgramsRef.current.push(null)
+        resultPgramsRef.current[rowIdx] = pgram
+    }
+
+    const clearResultPgram = (rowIdx: number) => {
+        const existing = resultPgramsRef.current[rowIdx]
+        if (existing) {
+            disposePgramVis(sceneRef.current!, existing)
+            resultPgramsRef.current[rowIdx] = null
+        }
     }
 
     const redrawVectors = () => {
-        vectorsRef.current = vectorsRef.current.map((vector) => {
-            const { pos, color } = vector
-            disposeVector(sceneRef.current!, vector)
+        matrixVectorsRef.current = matrixVectorsRef.current.map((vec) => {
+            if (!vec) return null
+            const { pos, color } = vec
+            disposeVector(sceneRef.current!, vec)
             return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
         })
 
-        if (pgramRef.current.length > 0) {
-            pgramRef.current = pgramRef.current.map((pgram) => {
-                const { color, pos, u, v } = pgram
-                disposePgramVis(sceneRef.current!, pgram)
-                return createPgramVis(u, v, pos, color, realSize, gridSizeRef.current, sceneRef.current!)
-            })
-        }
+        resultVectorsRef.current = resultVectorsRef.current.map((vec) => {
+            if (!vec) return null
+            const { pos, color } = vec
+            disposeVector(sceneRef.current!, vec)
+            return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
+        })
+
+        resultPgramsRef.current = resultPgramsRef.current.map((pgram) => {
+            if (!pgram) return null
+            const { pos, color, u, v } = pgram
+            disposePgramVis(sceneRef.current!, pgram)
+            return createPgramVis(u, v, pos, color, realSize, gridSizeRef.current, sceneRef.current!)
+        })
     }
 
     const disposeVectors = () => {
-        for (let i = 0; i < vectorsRef.current.length; i++) {
-            disposeVector(sceneRef.current!, vectorsRef.current[i])
+        for (let i = 0; i < matrixVectorsRef.current.length; i++) {
+            const vec = matrixVectorsRef.current[i]
+            if (vec) disposeVector(sceneRef.current!, vec)
         }
 
-        for (let i = 0; i < pgramRef.current.length; i++) {
-            disposePgramVis(sceneRef.current!, pgramRef.current[i])
+        for (let i = 0; i < resultVectorsRef.current.length; i++) {
+            const vec = resultVectorsRef.current[i]
+            if (vec) disposeVector(sceneRef.current!, vec)
+        }
+
+        for (let i = 0; i < resultPgramsRef.current.length; i++) {
+            const pgram = resultPgramsRef.current[i]
+            if (pgram) disposePgramVis(sceneRef.current!, pgram)
         }
     }
 
     return {
-        newVector,
-        applyScalarMultiply,
-        applyVectorAdd,
         redrawVectors,
-        disposeVectors
+        disposeVectors,
+        setMatrixVector,
+        clearMatrixVector,
+        setResultVector,
+        clearResultVector,
+        setResultPgram,
+        clearResultPgram
     }
 }
