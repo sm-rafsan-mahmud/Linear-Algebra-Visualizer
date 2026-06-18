@@ -3,39 +3,41 @@ import * as THREE from 'three'
 import type { Point3D, PgramObject, VectorObject } from '../lib/types'
 import { createVector, disposeVector } from '../lib/createVector'
 import { createPgramVis, disposePgramVis } from '../lib/createPgramVis'
+import type { Font } from 'three/addons/loaders/FontLoader.js'
 
 function getRandomColor() {
-  const h = Math.random() * 360         // any hue
-  const s = 100                         // 100% saturations
-  const l = 55 + Math.random() * 20     // 55–75% lightness
+    const h = Math.random() * 360         // any hue
+    const s = 100                         // 100% saturations
+    const l = 55 + Math.random() * 20     // 55–75% lightness
 
-  // HSL → RGB conversion
-  const a = s / 100
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12
-    const color = l / 100 - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-    return Math.round(255 * color)
-  };
+    // HSL → RGB conversion
+    const a = s / 100
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12
+        const color = l / 100 - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+        return Math.round(255 * color)
+    };
 
-  const r = f(0)
-  const g = f(8)
-  const b = f(4)
+    const r = f(0)
+    const g = f(8)
+    const b = f(4)
 
-  // Pack into a single integer the way Three.js expects
-  return (r << 16) | (g << 8) | b
+    // Pack into a single integer the way Three.js expects
+    return (r << 16) | (g << 8) | b
 }
 
-export function useVectors({sceneRef, realSize, gridSizeRef} : {
+export function useVectors({ sceneRef, realSize, gridSizeRef, cachedFontRef } : {
     sceneRef: React.RefObject<THREE.Scene | null>,
     realSize: number,
     gridSizeRef: React.RefObject<number>
+    cachedFontRef: React.RefObject<Font | null>
 }) {
     const matrixVectorsRef = useRef<(VectorObject | null)[]>([])
     const resultVectorsRef = useRef<(VectorObject | null)[]>([])
     const resultPgramsRef = useRef<(PgramObject | null)[]>([])
 
 
-    const setMatrixVector = (matIdx: number, x: number, y: number, z: number) => {
+    const setMatrixVector = (matIdx: number, x: number, y: number, z: number, name: string) => {
         // Dispose any existing vector for this matrix slot
         const existing = matrixVectorsRef.current[matIdx]
         if (existing) {
@@ -43,7 +45,7 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
         }
 
         const color = getRandomColor()
-        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current)
+        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current, name, cachedFontRef.current!)
 
         // Grow the array with nulls if needed, then assign
         while (matrixVectorsRef.current.length <= matIdx) {
@@ -60,12 +62,12 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
         }
     }
 
-    const setResultVector = (rowIdx: number, x: number, y: number, z: number) => {
+    const setResultVector = (rowIdx: number, x: number, y: number, z: number, name: string) => {
         const existing = resultVectorsRef.current[rowIdx]
         if (existing) disposeVector(sceneRef.current!, existing)
 
         const color = getRandomColor()
-        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current)
+        const newVec = createVector(sceneRef.current!, { x, y, z }, color, realSize, gridSizeRef.current, name, cachedFontRef.current!)
 
         while (resultVectorsRef.current.length <= rowIdx) resultVectorsRef.current.push(null)
         resultVectorsRef.current[rowIdx] = newVec
@@ -108,19 +110,30 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
         }
     }
 
+    const setLabelAngles = (is3D: boolean, camera: THREE.PerspectiveCamera, orthoCamera: THREE.OrthographicCamera) => {
+        matrixVectorsRef.current.forEach(vec => {
+            if (vec)
+                vec.label.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
+        })
+        resultVectorsRef.current.forEach(vec => {
+            if (vec)
+                vec.label.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
+        })
+    }
+
     const redrawVectors = () => {
         matrixVectorsRef.current = matrixVectorsRef.current.map((vec) => {
             if (!vec) return null
-            const { pos, color } = vec
+            const { pos, color, name } = vec
             disposeVector(sceneRef.current!, vec)
-            return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
+            return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current, name, cachedFontRef.current!)
         })
 
         resultVectorsRef.current = resultVectorsRef.current.map((vec) => {
             if (!vec) return null
-            const { pos, color } = vec
+            const { pos, color, name } = vec
             disposeVector(sceneRef.current!, vec)
-            return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current)
+            return createVector(sceneRef.current!, pos, color, realSize, gridSizeRef.current, name, cachedFontRef.current!)
         })
 
         resultPgramsRef.current = resultPgramsRef.current.map((pgram) => {
@@ -156,6 +169,7 @@ export function useVectors({sceneRef, realSize, gridSizeRef} : {
         setResultVector,
         clearResultVector,
         setResultPgram,
-        clearResultPgram
+        clearResultPgram,
+        setLabelAngles
     }
 }

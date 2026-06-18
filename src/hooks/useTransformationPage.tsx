@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { AxisLabelsObject } from '../lib/types';
+import type { Font } from 'three/addons/loaders/FontLoader.js'
+import { getFont } from '../lib/getFont';
 
 // TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
 // TODO: Start work on transformations.
@@ -15,8 +17,8 @@ export function useTransformationPage() {
     const activeCameraRef = useRef<'2d' | '3d'>('3d')
     const controlsRef = useRef<OrbitControls | null>(null)
     const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
-    const isMountedRef = useRef<boolean>(false)
     const lastZoomTime = useRef(0) // prevents the custom scroll function from working too fast on trackpads
+    const cachedFontRef = useRef<Font | null>(null)
 
     // camera position constants
     const CAM_3D = 0
@@ -32,8 +34,9 @@ export function useTransformationPage() {
         setResultVector,
         clearResultVector,
         setResultPgram,
-        clearResultPgram
-    } = useGrid({ sceneRef, axisLabelsRef, isMountedRef })
+        clearResultPgram,
+        setLabelAngles
+    } = useGrid({ sceneRef, axisLabelsRef, cachedFontRef })
 
     const setCameraPosition = (position: number) => {
         if (!axisLabelsRef.current || !controlsRef.current) return
@@ -53,7 +56,7 @@ export function useTransformationPage() {
 
     useEffect(() => {
         const mount = mountRef.current!
-        isMountedRef.current = true
+        let cancelled = false
 
         const width = mount.clientWidth
         const height = mount.clientHeight
@@ -121,9 +124,18 @@ export function useTransformationPage() {
         controlsRef.current = new OrbitControls(camera, renderer.domElement)
         controlsRef.current.enableZoom = false
 
-        // grid & axes
-        drawGrid()
-        drawAxes()
+        async function loadFont() {
+            const font = await getFont()
+            if (cancelled) return
+            
+            cachedFontRef.current = font
+
+            // grid & axes depend on font for label creation
+            // so we put them here to ensure it's loaded
+            drawGrid(scene)
+            drawAxes(scene)
+        }
+        loadFont()
         
         // event listener for custom zoom controls
         const handleWheel = (e: WheelEvent) => {
@@ -134,7 +146,7 @@ export function useTransformationPage() {
             lastZoomTime.current = now
 
             const direction = e.deltaY > 0 ? 'out' : 'in'
-            resizeGrid(direction)
+            resizeGrid(direction, scene)
         }
 
         mount.addEventListener('wheel', handleWheel, { passive: false })
@@ -151,18 +163,20 @@ export function useTransformationPage() {
                 ? orthoCameraRef.current
                 : perspectiveCameraRef.current!
 
+            const is3D = activeCameraRef.current === '3d'
+            
             // labelsRef becomes non-null asynchronously.
             if (axisLabelsRef.current) {
                 const { xLbl, yLbl, zLbl } = axisLabelsRef.current
-                const is3D = activeCameraRef.current === '3d'
 
                 xLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
                 yLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
                 if (is3D) {
                     zLbl.quaternion.copy(camera.quaternion)
                 }
-
             }
+
+            setLabelAngles(is3D, camera, orthoCamera)
 
             renderer.render(scene, activeCamera)
         }
@@ -170,14 +184,14 @@ export function useTransformationPage() {
         animate();
 
         return () => {
-            isMountedRef.current = false
+            cancelled = true
             cancelAnimationFrame(animationId)
             if(controlsRef.current) {
                 controlsRef.current.dispose()
             }
             resizeObserver.disconnect()
 
-            disposeAllGridObjects()
+            disposeAllGridObjects(scene)
             mount.removeEventListener('wheel', handleWheel)
 
             renderer.dispose()

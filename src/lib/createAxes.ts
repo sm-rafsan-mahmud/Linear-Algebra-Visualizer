@@ -4,16 +4,7 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { AxesObject } from './types'
 
-
-export function createAxes(
-    scene: THREE.Scene,
-    size: number,
-    xColor: number,
-    yColor: number,
-    zColor: number,
-    linewidth: number = 3
-): AxesObject {
-    function makeLine(points: [number, number, number, number, number, number], color: number): Line2 {
+function makeLine(points: [number, number, number, number, number, number], color: number, linewidth: number): Line2 {
         const geometry = new LineGeometry()
         geometry.setPositions(points)
  
@@ -25,10 +16,19 @@ export function createAxes(
  
         return new Line2(geometry, material)
     }
+
+export function createAxes(
+    scene: THREE.Scene,
+    size: number,
+    linewidth: number = 3
+): AxesObject {
+    const red = 0xff0000
+    const green = 0x00ff00
+    const blue = 0x0000ff
  
-    const xAxis = makeLine([-size, 0, 0, size, 0, 0], xColor)
-    const yAxis = makeLine([0, -size, 0, 0, size, 0], yColor)
-    const zAxis = makeLine([0, 0, -size, 0, 0, size], zColor)
+    const xAxis = makeLine([-size, 0, 0, size, 0, 0], red, linewidth)
+    const yAxis = makeLine([0, -size, 0, 0, size, 0], green, linewidth)
+    const zAxis = makeLine([0, 0, -size, 0, 0, size], blue, linewidth)
  
     scene.add(xAxis, yAxis, zAxis)
     return {xAxis, yAxis, zAxis}

@@ -142,7 +142,7 @@ export default function TransformationPage() {
           next[i] = null;
           return next;
         });
-      return;
+        return;
       }
       try {
         const scope = buildScope(updatedMatrices);
@@ -151,7 +151,7 @@ export default function TransformationPage() {
 
         const vec = tryParseColumnVector(formattedValues)
         if (vec) {
-          setResultVector(i, vec.x, vec.y, vec.z)
+          setResultVector(i, vec.x, vec.y, vec.z, row.value)
 
           // Check if this result came from a simple vector addition/subtraction
           const binOp = parseBinaryVectorOp(row.value, updatedMatrices)
@@ -211,7 +211,7 @@ export default function TransformationPage() {
       // Check if the updated matrix is now a valid column vector
       const vec = tryParseColumnVector(updated[targetIdx].values)
       if (vec) {
-        setMatrixVector(targetIdx, vec.x, vec.y, vec.z)
+        setMatrixVector(targetIdx, vec.x, vec.y, vec.z, updated[targetIdx].nameID)
     
       } else {
         clearMatrixVector(targetIdx)

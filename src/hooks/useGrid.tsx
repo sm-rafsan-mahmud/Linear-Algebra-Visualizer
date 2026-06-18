@@ -7,14 +7,17 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import type { AxisLabelsObject, AxesObject } from '../lib/types';
 import { useRef } from 'react';
 import { useVectors } from './useVectors';
+import type { Font } from 'three/addons/loaders/FontLoader.js'
 
-export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
+export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
     sceneRef: React.RefObject<THREE.Scene | null>,
     axisLabelsRef: React.RefObject<AxisLabelsObject | null>,
-    isMountedRef: React.RefObject<boolean>
+    cachedFontRef: React.RefObject<Font | null>
 }) {
     // grid variables
-    const REAL_GRID_SIZE = 10;
+    const REAL_GRID_SIZE = 10
+    const MINOR_GRID_COLOR = 0xaaaaaa
+    const MAJOR_GRID_COLOR = 0xffffff
     const gridSizeRef    = useRef<number>(5)
     const gridStepRef    = useRef<number>(0.5)
     const majorStepRef   = useRef<number>(2)
@@ -33,35 +36,36 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         setResultVector,
         clearResultVector,
         setResultPgram,
-        clearResultPgram
-    } = useVectors({ sceneRef, realSize: REAL_GRID_SIZE, gridSizeRef })
+        clearResultPgram,
+        setLabelAngles
+    } = useVectors({ sceneRef, realSize: REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
-    const drawAxes = () => {
-        axesRef.current = createAxes(sceneRef.current!, REAL_GRID_SIZE, 0xff0000, 0x00ff00, 0x0000ff)
-        initLabels(isMountedRef)
+    const drawAxes = (scene: THREE.Scene) => {
+        axesRef.current = createAxes(scene, REAL_GRID_SIZE)
+        axisLabelsRef.current = createAxisLabels(scene, 11, cachedFontRef.current!)
     }
     
-    const drawGrid = () => {
-        gridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
-        majorGridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
+    const drawGrid = (scene: THREE.Scene) => {
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
         if (coordsRef.current) {
-            disposeCoordinates(sceneRef.current!, coordsRef.current!)
+            disposeCoordinates(scene, coordsRef.current!)
         }
-        initCoords(isMountedRef)
+        initCoords(scene)
     }
 
-    const disposeAllGridObjects = () => {
-        if (gridRef.current) { disposeGrid(sceneRef.current!, gridRef.current) }
-        if (majorGridRef.current) { disposeGrid(sceneRef.current!, majorGridRef.current) }
-        if (axesRef.current) { disposeAxes(sceneRef.current!, axesRef.current) }
+    const disposeAllGridObjects = (scene: THREE.Scene) => {
+        if (gridRef.current) { disposeGrid(scene, gridRef.current) }
+        if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
+        if (axesRef.current) { disposeAxes(scene, axesRef.current) }
         if (axisLabelsRef.current) {
-            disposeAxisLabels(sceneRef.current!, axisLabelsRef.current)
+            disposeAxisLabels(scene, axisLabelsRef.current)
         }
-        if (coordsRef.current) { disposeCoordinates(sceneRef.current!, coordsRef.current) }
+        if (coordsRef.current) { disposeCoordinates(scene, coordsRef.current) }
         disposeVectors()
     }
 
-    const resizeGrid = (direction: 'out' | 'in') => {
+    const resizeGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
         // change the gridSize on scroll (not REAL_GRID_SIZE).
         const ZOOM_FACTOR = 1.1
         const MIN_SIZE = 1e-4
@@ -70,25 +74,25 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         const factor = direction === 'out' ? ZOOM_FACTOR : 1 / ZOOM_FACTOR
         gridSizeRef.current = Math.max(MIN_SIZE, Math.min(MAX_SIZE, gridSizeRef.current * factor))
 
-        rescaleGrid(direction)
+        rescaleGrid(direction, scene)
         redrawVectors()
 
         // dispose of and redraw the grid
-        if (gridRef.current) { disposeGrid(sceneRef.current!, gridRef.current) }
-        if (majorGridRef.current) { disposeGrid(sceneRef.current!, majorGridRef.current) }
+        if (gridRef.current) { disposeGrid(scene, gridRef.current) }
+        if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
 
-        gridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
-        majorGridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
     }
 
-    const rescaleGrid = (direction: 'out' | 'in') => {
+    const rescaleGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
         const ratio = majorStepRef.current / gridSizeRef.current
         const tooSmall = ratio < 0.25
         const tooLarge = ratio > 0.75
 
         if (!tooSmall && !tooLarge) { 
-            disposeCoordinates(sceneRef.current!, coordsRef.current!)
-            initCoords(isMountedRef)   
+            disposeCoordinates(scene, coordsRef.current!)
+            initCoords(scene)   
             return
         }
 
@@ -129,44 +133,11 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
             }
         }
 
-        disposeCoordinates(sceneRef.current!, coordsRef.current!)
-        initCoords(isMountedRef)
+        disposeCoordinates(scene, coordsRef.current!)
+        initCoords(scene)
     }
 
-        // const magnitude = Math.pow(10, Math.floor(Math.log10(gridSizeRef.current)))
-        // const normalized = gridSizeRef.current / magnitude  // in range [1, 10)
-
-        // let multiplier: number
-        // if (normalized < 2)      multiplier = 1
-        // else if (normalized < 5) multiplier = 2
-        // else                     multiplier = 5
-
-        // const newMajorStep = magnitude >= 1
-        //     ? Math.round(multiplier * magnitude)
-        //     : multiplier / Math.round(1 / magnitude)
-
-        // const newMinorStep = multiplier === 5
-        //     ? newMajorStep / 5
-        //     : newMajorStep / 4
-
-        // majorStepRef.current = newMajorStep
-        // gridStepRef.current = newMinorStep
-
-    async function initLabels(isMountedRef: { current: boolean }) {
-        const scene = sceneRef.current!
-        const labels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
-    
-        if (!isMountedRef.current || sceneRef.current !== scene) {
-            disposeAxisLabels(scene, labels)
-            return
-        }
-    
-        axisLabelsRef.current = labels
-    }
-
-    async function initCoords(isMountedRef: { current: boolean }) {
-        const scene = sceneRef.current!
-        
+    const initCoords = (scene: THREE.Scene) => {
         // define the number of coordinate labels
         let numLabels: number
         if (gridSizeRef.current % majorStepRef.current != 0) { // if the gridSize is not a multiple of the major grid step
@@ -177,16 +148,15 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         } else {
             numLabels = gridSizeRef.current / majorStepRef.current
             // ex. if size = 6 & step = 3, we want 3 labels (-4, -2, 0, 2, 4) because we don't want labels at the boundaries.
-            // numLabels = 3 producing 5 labels is explained by looking at ../lib/createCoordinates.ts
+            // numLabels = 3 producing 5 labels is because numLabels refers to the number of labels in [0, size)
         }
-        const coords = await createCoordinates(scene, REAL_GRID_SIZE / gridSizeRef.current, majorStepRef.current, numLabels, 0xffffff)
-
-        if (!isMountedRef.current || sceneRef.current !== scene) {
-            disposeCoordinates(scene, coords)
-            return
-        }
-
-        coordsRef.current = coords
+        coordsRef.current = createCoordinates(
+            scene,
+            REAL_GRID_SIZE / gridSizeRef.current,
+            majorStepRef.current,
+            numLabels,
+            cachedFontRef.current!
+        )
     }
  
     return {
@@ -199,7 +169,8 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         setResultVector,
         clearResultVector,
         setResultPgram,
-        clearResultPgram
+        clearResultPgram,
+        setLabelAngles
     }
 
 }

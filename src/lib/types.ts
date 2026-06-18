@@ -23,7 +23,9 @@ export type VectorObject = {
     shaft: Line2
     head:  THREE.Mesh
     pos:   Point3D,
-    color: number
+    color: number,
+    name: string,
+    label: THREE.Mesh
 }
 
 export type PgramObject = {
