@@ -2,12 +2,18 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
-import type { AxisLabelsObject } from '../lib/types';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 import { getFont } from '../lib/getFont';
+import { useVectors } from './useVectors';
 
-// TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
-// TODO: Start work on transformations.
+function computeOrthoFrustum(frustumSize: number, aspect: number) {
+    return {
+        left: -frustumSize * aspect / 2,
+        right: frustumSize * aspect / 2,
+        top: frustumSize / 2,
+        bottom: -frustumSize / 2
+    }
+}
 
 export function useTransformationPage() {
     const mountRef = useRef<HTMLDivElement | null>(null)
@@ -16,38 +22,51 @@ export function useTransformationPage() {
     const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null)
     const activeCameraRef = useRef<'2d' | '3d'>('3d')
     const controlsRef = useRef<OrbitControls | null>(null)
-    const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
     const lastZoomTime = useRef(0) // prevents the custom scroll function from working too fast on trackpads
     const cachedFontRef = useRef<Font | null>(null)
 
-    // camera position constants
+    // camera constants
     const CAM_3D = 0
     const CAM_2D = 1
+    const CAM_NEAR = 0.1
+    const CAM_FAR = 1000
+    const FRUSTUM_SIZE = 24
+
+    // values needed by useGrid & useVectors
+    const REAL_GRID_SIZE = 10
+    const gridSizeRef = useRef<number>(5)
 
     const {
         drawAxes,
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
+        setZLblVisible,
+        setAxisLabelAngles
+    } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+
+    const {
+        redrawVectors,
+        disposeVectors,
         setMatrixVector,
         clearMatrixVector,
         setResultVector,
         clearResultVector,
         setResultPgram,
         clearResultPgram,
-        setLabelAngles
-    } = useGrid({ sceneRef, axisLabelsRef, cachedFontRef })
+        setVectorLabelAngles
+    } = useVectors({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
     const setCameraPosition = (position: number) => {
-        if (!axisLabelsRef.current || !controlsRef.current) return
+        if (!controlsRef.current) return
         
         if (position === CAM_3D) {
-            axisLabelsRef.current.zLbl.visible = true
+            setZLblVisible(true)
             controlsRef.current.enabled = true
             activeCameraRef.current = '3d'
         
         } else if (position === CAM_2D) {
-            axisLabelsRef.current.zLbl.visible = false
+            setZLblVisible(false)
             controlsRef.current.enabled = false
             activeCameraRef.current = '2d'
         
@@ -72,29 +91,16 @@ export function useTransformationPage() {
         scene.background = new THREE.Color(0x002233)
 
         // PerspectiveCamera for 3D view
-        const camera = new THREE.PerspectiveCamera(
-          75,
-          width / height,
-          0.1,
-          1000
-        )
-        perspectiveCameraRef.current = camera;
-
-        camera.position.set(4, -17, 15)
-        camera.up.set(0, 0, 1)
-        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        const perspCamera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
+        perspectiveCameraRef.current = perspCamera;
+        perspCamera.position.set(4, -17, 15)
+        perspCamera.up.set(0, 0, 1)
+        perspCamera.lookAt(new THREE.Vector3(0, 0, 0))
 
         // OrthographicCamera for 2D view—ensures vectors have the correct length.
-        const frustumSize = 24
         const aspect = width / height
-        const orthoCamera = new THREE.OrthographicCamera(
-            -frustumSize * aspect / 2,   // left
-            frustumSize * aspect / 2,   // right
-            frustumSize / 2,            // top
-            -frustumSize / 2,            // bottom
-            0.1,
-            1000
-        )
+        const { left, right, top, bottom } = computeOrthoFrustum(FRUSTUM_SIZE, aspect)
+        const orthoCamera = new THREE.OrthographicCamera(left, right, top, bottom, CAM_NEAR, CAM_FAR)
         orthoCamera.position.set(0, 0, 17)
         orthoCamera.lookAt(new THREE.Vector3(0, 0, 0))
         orthoCameraRef.current = orthoCamera
@@ -107,21 +113,22 @@ export function useTransformationPage() {
             renderer.setSize(width, height)
 
             // Perspective camera
-            camera.aspect = aspect
-            camera.updateProjectionMatrix()
+            perspCamera.aspect = aspect
+            perspCamera.updateProjectionMatrix()
 
             // Orthographic camera — recalculate frustum on resize
             if (orthoCameraRef.current) {
-                orthoCameraRef.current.left   = -frustumSize * aspect / 2
-                orthoCameraRef.current.right  =  frustumSize * aspect / 2
-                orthoCameraRef.current.top    =  frustumSize / 2
-                orthoCameraRef.current.bottom = -frustumSize / 2
+                const { left, right, top, bottom } = computeOrthoFrustum(FRUSTUM_SIZE, aspect)
+                orthoCameraRef.current.left = left
+                orthoCameraRef.current.right = right
+                orthoCameraRef.current.top = top
+                orthoCameraRef.current.bottom = bottom
                 orthoCameraRef.current.updateProjectionMatrix()
             }
         })
         resizeObserver.observe(mount)
 
-        controlsRef.current = new OrbitControls(camera, renderer.domElement)
+        controlsRef.current = new OrbitControls(perspCamera, renderer.domElement)
         controlsRef.current.enableZoom = false
 
         async function loadFont() {
@@ -147,6 +154,7 @@ export function useTransformationPage() {
 
             const direction = e.deltaY > 0 ? 'out' : 'in'
             resizeGrid(direction, scene)
+            redrawVectors()
         }
 
         mount.addEventListener('wheel', handleWheel, { passive: false })
@@ -159,24 +167,11 @@ export function useTransformationPage() {
                 controlsRef.current.update()
             }
 
-            const activeCamera = activeCameraRef.current === '2d' && orthoCameraRef.current
-                ? orthoCameraRef.current
-                : perspectiveCameraRef.current!
-
             const is3D = activeCameraRef.current === '3d'
-            
-            // labelsRef becomes non-null asynchronously.
-            if (axisLabelsRef.current) {
-                const { xLbl, yLbl, zLbl } = axisLabelsRef.current
+            const activeCamera = is3D ? perspCamera : orthoCamera
 
-                xLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
-                yLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
-                if (is3D) {
-                    zLbl.quaternion.copy(camera.quaternion)
-                }
-            }
-
-            setLabelAngles(is3D, camera, orthoCamera)
+            setAxisLabelAngles(activeCamera)
+            setVectorLabelAngles(activeCamera)
 
             renderer.render(scene, activeCamera)
         }
@@ -192,6 +187,7 @@ export function useTransformationPage() {
             resizeObserver.disconnect()
 
             disposeAllGridObjects(scene)
+            disposeVectors()
             mount.removeEventListener('wheel', handleWheel)
 
             renderer.dispose()

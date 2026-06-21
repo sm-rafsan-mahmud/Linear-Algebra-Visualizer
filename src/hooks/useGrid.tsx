@@ -6,39 +6,25 @@ import { createCoordinates, disposeCoordinates } from '../lib/createCoordinates'
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import type { AxisLabelsObject, AxesObject } from '../lib/types';
 import { useRef } from 'react';
-import { useVectors } from './useVectors';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 
-export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
-    sceneRef: React.RefObject<THREE.Scene | null>,
-    axisLabelsRef: React.RefObject<AxisLabelsObject | null>,
+export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
+    REAL_GRID_SIZE: number,
+    gridSizeRef: React.RefObject<number>,
     cachedFontRef: React.RefObject<Font | null>
 }) {
     // grid variables
-    const REAL_GRID_SIZE = 10
     const MINOR_GRID_COLOR = 0xaaaaaa
     const MAJOR_GRID_COLOR = 0xffffff
-    const gridSizeRef    = useRef<number>(5)
     const gridStepRef    = useRef<number>(0.5)
     const majorStepRef   = useRef<number>(2)
 
     // grid objects (needed for cleanup)
-    const axesRef      = useRef<AxesObject | null>(null)
-    const gridRef      = useRef<LineSegments2 | null>(null)
-    const majorGridRef = useRef<LineSegments2 | null>(null)
-    const coordsRef    = useRef<THREE.Mesh[] | null>(null)
-
-    const {
-        redrawVectors,
-        disposeVectors,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram,
-        setLabelAngles
-    } = useVectors({ sceneRef, realSize: REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+    const axesRef       = useRef<AxesObject | null>(null)
+    const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
+    const gridRef       = useRef<LineSegments2 | null>(null)
+    const majorGridRef  = useRef<LineSegments2 | null>(null)
+    const coordsRef     = useRef<THREE.Mesh[] | null>(null)
 
     const drawAxes = (scene: THREE.Scene) => {
         axesRef.current = createAxes(scene, REAL_GRID_SIZE)
@@ -62,7 +48,6 @@ export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
             disposeAxisLabels(scene, axisLabelsRef.current)
         }
         if (coordsRef.current) { disposeCoordinates(scene, coordsRef.current) }
-        disposeVectors()
     }
 
     const resizeGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
@@ -75,14 +60,13 @@ export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
         gridSizeRef.current = Math.max(MIN_SIZE, Math.min(MAX_SIZE, gridSizeRef.current * factor))
 
         rescaleGrid(direction, scene)
-        redrawVectors()
 
         // dispose of and redraw the grid
         if (gridRef.current) { disposeGrid(scene, gridRef.current) }
         if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
 
-        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
-        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
     }
 
     const rescaleGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
@@ -137,6 +121,30 @@ export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
         initCoords(scene)
     }
 
+    const setZLblVisible = (visible: boolean) => {
+        if (!axisLabelsRef.current) return
+
+        if (visible) {
+            axisLabelsRef.current!.zLbl.visible = true
+
+        } else {
+            axisLabelsRef.current!.zLbl.visible = false
+        }
+    }
+
+    const setAxisLabelAngles = (camera: THREE.Camera) => {
+        if (!axisLabelsRef.current) return
+
+        const { xLbl, yLbl, zLbl } = axisLabelsRef.current!
+
+        xLbl.quaternion.copy(camera.quaternion)
+        yLbl.quaternion.copy(camera.quaternion)
+        if (camera instanceof THREE.PerspectiveCamera) {
+            // zLbl isn't visible in 2D mode so no need to change its angle
+            zLbl.quaternion.copy(camera.quaternion)
+        }
+    }
+
     const initCoords = (scene: THREE.Scene) => {
         // define the number of coordinate labels
         let numLabels: number
@@ -164,13 +172,8 @@ export function useGrid({ sceneRef, axisLabelsRef, cachedFontRef } : {
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram,
-        setLabelAngles
+        setZLblVisible,
+        setAxisLabelAngles
     }
 
 }

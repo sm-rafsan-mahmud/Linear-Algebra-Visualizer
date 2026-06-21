@@ -31,13 +31,13 @@ function getScaledPos(pos: Point3D, realSize: number, gridSize: number): Point3D
 }
 
 export function createPgramVis(
+    scene: THREE.Scene,
     u: VectorObject,
     v: VectorObject,
     pos: Point3D,
     color: number,
     realSize: number,
-    size: number,
-    scene: THREE.Scene
+    size: number
 ): PgramObject {
     // chop vectors if needed and scale them to the size ratio
     const uPos   = chopAndScale(u.pos, realSize, size)
