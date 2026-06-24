@@ -5,6 +5,7 @@ import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 import { getFont } from '../lib/getFont';
 import { useVectors } from './useVectors';
+import type { Point3D } from '../lib/types';
 
 function computeOrthoFrustum(frustumSize: number, aspect: number) {
     return {
@@ -16,14 +17,19 @@ function computeOrthoFrustum(frustumSize: number, aspect: number) {
 }
 
 export function useTransformationPage() {
+    // refs used for Three.js objects
     const mountRef = useRef<HTMLDivElement | null>(null)
     const sceneRef = useRef<THREE.Scene | null>(null)
     const perspectiveCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
     const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null)
     const activeCameraRef = useRef<'2d' | '3d'>('3d')
     const controlsRef = useRef<OrbitControls | null>(null)
-    const lastZoomTime = useRef(0) // prevents the custom scroll function from working too fast on trackpads
-    const cachedFontRef = useRef<Font | null>(null)
+
+    // refs & constants for internal usage/logic
+    const zoomDirtyRef = useRef(false)
+    const pendingDirectionRef = useRef<'in' | 'out'>('in')
+    const scrollAccumRef = useRef(0)
+    const SCROLL_THRESHOLD = 50  // tune this value
 
     // camera constants
     const CAM_3D = 0
@@ -35,6 +41,7 @@ export function useTransformationPage() {
     // values needed by useGrid & useVectors
     const REAL_GRID_SIZE = 10
     const gridSizeRef = useRef<number>(5)
+    const cachedFontRef = useRef<Font | null>(null)
 
     const {
         drawAxes,
@@ -46,17 +53,41 @@ export function useTransformationPage() {
     } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
     const {
+        setMatrixVector:   _setMatrixVector,
+        clearMatrixVector: _clearMatrixVector,
+        setResultVector:   _setResultVector,
+        clearResultVector: _clearResultVector,
+        setResultPgram:    _setResultPgram,
+        clearResultPgram:  _clearResultPgram,
         redrawVectors,
         disposeVectors,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram,
         setVectorLabelAngles
-    } = useVectors({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+    } = useVectors({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
+    function colorToNumber(hex: string): number {
+        return parseInt(hex.replace('#', '0x'), 16);
+    }
+
+    // these functions eliminate the need to pass sceneRef around through several hooks.
+    const setMatrixVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
+        _setMatrixVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
+
+    const clearMatrixVector = (idx: number) =>
+        _clearMatrixVector(sceneRef.current!, idx)
+
+    const setResultVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
+        _setResultVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
+
+    const clearResultVector = (idx: number) =>
+        _clearResultVector(sceneRef.current!, idx)
+
+    const setResultPgram = (idx: number, u: Point3D, v: Point3D, sum: Point3D, color: string) =>
+        _setResultPgram(sceneRef.current!, idx, u, v, sum, colorToNumber(color))
+
+    const clearResultPgram = (idx: number) =>
+        _clearResultPgram(sceneRef.current!, idx)
+
+    
     const setCameraPosition = (position: number) => {
         if (!controlsRef.current) return
         
@@ -147,14 +178,13 @@ export function useTransformationPage() {
         // event listener for custom zoom controls
         const handleWheel = (e: WheelEvent) => {
             e.preventDefault()
+            scrollAccumRef.current += e.deltaY
 
-            const now = Date.now()
-            if (now - lastZoomTime.current < 85) return
-            lastZoomTime.current = now
-
-            const direction = e.deltaY > 0 ? 'out' : 'in'
-            resizeGrid(direction, scene)
-            redrawVectors()
+            if (Math.abs(scrollAccumRef.current) >= SCROLL_THRESHOLD) {
+                pendingDirectionRef.current = scrollAccumRef.current > 0 ? 'out' : 'in'
+                zoomDirtyRef.current = true
+                scrollAccumRef.current = 0
+            }
         }
 
         mount.addEventListener('wheel', handleWheel, { passive: false })
@@ -165,6 +195,13 @@ export function useTransformationPage() {
             animationId = requestAnimationFrame(animate)
             if (controlsRef.current) {
                 controlsRef.current.update()
+            }
+
+            if (zoomDirtyRef.current) {
+                zoomDirtyRef.current = false
+                const direction = pendingDirectionRef.current
+                resizeGrid(direction, scene)
+                redrawVectors(scene)
             }
 
             const is3D = activeCameraRef.current === '3d'
@@ -187,12 +224,13 @@ export function useTransformationPage() {
             resizeObserver.disconnect()
 
             disposeAllGridObjects(scene)
-            disposeVectors()
+            disposeVectors(scene)
             mount.removeEventListener('wheel', handleWheel)
 
             renderer.dispose()
             mount.removeChild(renderer.domElement)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return {

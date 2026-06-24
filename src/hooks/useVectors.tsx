@@ -3,15 +3,31 @@ import type { Font } from 'three/addons/loaders/FontLoader.js'
 import { usePgramSlot } from './usePgramSlot'
 import { useVectorSlot } from './useVectorSlot'
 
-export function useVectors({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
-    sceneRef: React.RefObject<THREE.Scene | null>,
+export function useVectors({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     REAL_GRID_SIZE: number,
     gridSizeRef: React.RefObject<number>
     cachedFontRef: React.RefObject<Font | null>
 }) {
-    const matrixVectors = useVectorSlot({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
-    const resultVectors = useVectorSlot({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
-    const resultPgrams  = usePgramSlot({ sceneRef, REAL_GRID_SIZE, gridSizeRef })
+    const matrixVectors = useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+    const resultVectors = useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+    const resultPgrams  = usePgramSlot({ REAL_GRID_SIZE, gridSizeRef })
+
+    const redrawVectors = (scene: THREE.Scene) => {
+        matrixVectors.redraw(scene)
+        resultVectors.redraw(scene)
+        resultPgrams.redraw(scene)
+    }
+
+    const disposeVectors = (scene: THREE.Scene) => {
+        matrixVectors.disposeAll(scene)
+        resultVectors.disposeAll(scene)
+        resultPgrams.disposeAll(scene)
+    }
+
+    const setVectorLabelAngles = (camera: THREE.Camera) => {
+        matrixVectors.setLabelAngles(camera)
+        resultVectors.setLabelAngles(camera)
+    }
 
     return {
         setMatrixVector: matrixVectors.set,
@@ -20,8 +36,8 @@ export function useVectors({ sceneRef, REAL_GRID_SIZE, gridSizeRef, cachedFontRe
         clearResultVector: resultVectors.clear,
         setResultPgram: resultPgrams.set,
         clearResultPgram: resultPgrams.clear,
-        redrawVectors: () => { matrixVectors.redraw(); resultVectors.redraw(); resultPgrams.redraw() },
-        disposeVectors: () => { matrixVectors.disposeAll(); resultVectors.disposeAll(); resultPgrams.disposeAll() },
-        setVectorLabelAngles: (camera: THREE.Camera) => { matrixVectors.setLabelAngles(camera); resultVectors.setLabelAngles(camera) },
+        redrawVectors,
+        disposeVectors,
+        setVectorLabelAngles
     }
 }

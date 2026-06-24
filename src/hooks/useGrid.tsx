@@ -16,8 +16,11 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     // grid variables
     const MINOR_GRID_COLOR = 0xaaaaaa
     const MAJOR_GRID_COLOR = 0xffffff
-    const gridStepRef    = useRef<number>(0.5)
-    const majorStepRef   = useRef<number>(2)
+    const MIN_GRID_SIZE    = 1e-4
+    const MAX_GRID_SIZE    = 1e5
+    const ZOOM_FACTOR      = 1.1
+    const gridStepRef      = useRef<number>(0.5)
+    const majorStepRef     = useRef<number>(2)
 
     // grid objects (needed for cleanup)
     const axesRef       = useRef<AxesObject | null>(null)
@@ -51,13 +54,10 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     }
 
     const resizeGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
-        // change the gridSize on scroll (not REAL_GRID_SIZE).
-        const ZOOM_FACTOR = 1.1
-        const MIN_SIZE = 1e-4
-        const MAX_SIZE = 1e5
+        // change gridSizeRef's value
 
         const factor = direction === 'out' ? ZOOM_FACTOR : 1 / ZOOM_FACTOR
-        gridSizeRef.current = Math.max(MIN_SIZE, Math.min(MAX_SIZE, gridSizeRef.current * factor))
+        gridSizeRef.current = Math.max(MIN_GRID_SIZE, Math.min(MAX_GRID_SIZE, gridSizeRef.current * factor))
 
         rescaleGrid(direction, scene)
 
@@ -74,46 +74,42 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
         const tooSmall = ratio < 0.25
         const tooLarge = ratio > 0.75
 
-        if (!tooSmall && !tooLarge) { 
-            disposeCoordinates(scene, coordsRef.current!)
-            initCoords(scene)   
-            return
-        }
+        if (tooSmall || tooLarge) {
+            const magnitude = Math.pow(10, Math.floor(Math.log10(majorStepRef.current)))
+            const criticalDigit = Math.round(majorStepRef.current / magnitude) // gives 1, 2, or 5
+            
+            const clean = (n: number) => parseFloat(n.toPrecision(1))
 
-        const magnitude = Math.pow(10, Math.floor(Math.log10(majorStepRef.current)))
-        const criticalDigit = Math.round(majorStepRef.current / magnitude) // gives 1, 2, or 5
-        
-        const clean = (n: number) => parseFloat(n.toPrecision(1))
-
-        if (direction === 'out') {
-            switch (criticalDigit) {
-                case 1:
-                    majorStepRef.current = clean(2 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-                case 2:
-                    majorStepRef.current = clean(5 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 5
-                    break
-                case 5:
-                    majorStepRef.current = clean(10 * magnitude)     // e.g. 5 -> 10
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-            }
-        } else {
-            switch (criticalDigit) {
-                case 1:
-                    majorStepRef.current = clean(0.5 * magnitude)    // e.g. 0.1 -> 0.05
-                    gridStepRef.current = majorStepRef.current / 5
-                    break
-                case 2:
-                    majorStepRef.current = clean(magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-                case 5:
-                    majorStepRef.current = clean(2 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
+            if (direction === 'out') {
+                switch (criticalDigit) {
+                    case 1:
+                        majorStepRef.current = clean(2 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                    case 2:
+                        majorStepRef.current = clean(5 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 5
+                        break
+                    case 5:
+                        majorStepRef.current = clean(10 * magnitude)     // e.g. 5 -> 10
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                }
+            } else {
+                switch (criticalDigit) {
+                    case 1:
+                        majorStepRef.current = clean(0.5 * magnitude)    // e.g. 0.1 -> 0.05
+                        gridStepRef.current = majorStepRef.current / 5
+                        break
+                    case 2:
+                        majorStepRef.current = clean(magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                    case 5:
+                        majorStepRef.current = clean(2 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                }
             }
         }
 
@@ -123,13 +119,7 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
 
     const setZLblVisible = (visible: boolean) => {
         if (!axisLabelsRef.current) return
-
-        if (visible) {
-            axisLabelsRef.current!.zLbl.visible = true
-
-        } else {
-            axisLabelsRef.current!.zLbl.visible = false
-        }
+        axisLabelsRef.current.zLbl.visible = visible
     }
 
     const setAxisLabelAngles = (camera: THREE.Camera) => {

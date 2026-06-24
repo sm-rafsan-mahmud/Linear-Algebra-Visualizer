@@ -22,6 +22,15 @@ export function buildScope(matrices: MatrixData[]) {
   return scope;
 }
 
+function getDefaultColor(): string {
+  const DEFAULT_COLORS = [
+    "#E74C3C", "#3498DB", "#2ECC71",
+    "#F1C40F", "#9B59B6", "#E67E22"
+  ]
+
+  return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
+}
+
 export default function TransformationPage() {
   const {
     mountRef,
@@ -48,6 +57,8 @@ export default function TransformationPage() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [result, setResult] = useState<string[][]>([[""]]);
   const [resultMatrices, setResultMatrices] = useState<(MatrixData | null)[]>([]);
+  const [matrixColors, setMatrixColors] = useState<string[]>([])
+  const [resultColors, setResultColors] = useState<string[]>([])
 
   function tryParseColumnVector(values: string[][]): { x: number; y: number; z: number } | null {
     // Must be a column matrix: every row has exactly 1 column
@@ -91,6 +102,8 @@ export default function TransformationPage() {
       setNameID("");
       return updated;
     });
+
+    setMatrixColors(c => [...c, getDefaultColor()])
   }
 
   function handleNameIDChange(e: ChangeEvent<HTMLInputElement>) {
@@ -151,7 +164,7 @@ export default function TransformationPage() {
 
         const vec = tryParseColumnVector(formattedValues)
         if (vec) {
-          setResultVector(i, vec.x, vec.y, vec.z, row.value)
+          setResultVector(i, vec.x, vec.y, vec.z, resultColors[i], row.value)
 
           // Check if this result came from a simple vector addition/subtraction
           const binOp = parseBinaryVectorOp(row.value, updatedMatrices)
@@ -163,7 +176,7 @@ export default function TransformationPage() {
             const rightVec = rightMat ? tryParseColumnVector(rightMat.values) : null
 
             if (leftVec && rightVec) {
-              setResultPgram(i, leftVec, rightVec, vec)
+              setResultPgram(i, leftVec, rightVec, vec, resultColors[i])
             
             } else {
               clearResultPgram(i)
@@ -182,6 +195,12 @@ export default function TransformationPage() {
           next[i] = { nameID: formatExpressionName(row.value), values: formattedValues };
           return next;
         });
+
+        setResultColors(prev => {
+          const next = [...prev]
+          while (next.length <= i) next.push(prev[i] ?? getDefaultColor());
+          return next
+        })
       } catch {
         clearResultVector(i)
         setResultMatrices(prev => {
@@ -211,7 +230,7 @@ export default function TransformationPage() {
       // Check if the updated matrix is now a valid column vector
       const vec = tryParseColumnVector(updated[targetIdx].values)
       if (vec) {
-        setMatrixVector(targetIdx, vec.x, vec.y, vec.z, updated[targetIdx].nameID)
+        setMatrixVector(targetIdx, vec.x, vec.y, vec.z, matrixColors[targetIdx], updated[targetIdx].nameID)
     
       } else {
         clearMatrixVector(targetIdx)
@@ -285,6 +304,8 @@ export default function TransformationPage() {
               selectedIdx={selectedIdx}
               setSelectedIdx={setSelectedIdx}
               handleValueChange={handleValueChange}
+              vectorColor={matrixColors[i] ?? getDefaultColor()}
+              onColorChange={(color) => setMatrixColors(c => c.map((v, ci) => ci === i ? color : v))}
             />
           ))}
         </div>
@@ -301,6 +322,8 @@ export default function TransformationPage() {
                 selectedIdx={null}
                 setSelectedIdx={() => {}}
                 handleValueChange={() => {}}
+                vectorColor={resultColors[i] ?? getDefaultColor()}
+                onColorChange={(color) => setResultColors(c => c.map((v, ci) => ci === i ? color : v))}
               />
             );
           })}

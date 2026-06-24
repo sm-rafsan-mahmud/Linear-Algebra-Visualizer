@@ -5,23 +5,11 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 import type { Point3D, VectorObject } from './types'
 import { makeLabel } from './makeLabel'
+import { getScaledPos, isChopped } from './utilFunctions'
 
 const HEAD_RADIUS  = 0.15
 const HEAD_LENGTH  = 0.25          // world units, not a proportion of vector length
 const SEGMENTS     = 16
-
-function isChopped(pos: Point3D, gridSize: number) {
-    if (Math.abs(pos.x) > gridSize) { return true }
-    if (Math.abs(pos.y) > gridSize) { return true }
-    if (Math.abs(pos.z) > gridSize) { return true }
-
-    return false
-}
-
-function getScaledPos(pos: Point3D, realSize: number, gridSize: number): Point3D {
-    const ratio = realSize / gridSize
-    return { x: pos.x * ratio, y: pos.y * ratio, z: pos.z * ratio }
-}
 
 export function createVector(
     scene: THREE.Scene,
@@ -38,7 +26,6 @@ export function createVector(
     // if so, we find the point on the grid edge it intersects
     // then we chop it.
     const chop: boolean = isChopped(pos, gridSize)
-    
 
     // create the shaft
     const shaftGeometry = new LineGeometry()
@@ -65,7 +52,7 @@ export function createVector(
 
         shaftGeometry.setPositions([
             0, 0, 0,
-            scaledIntersect!.x, scaledIntersect!.y, scaledIntersect!.z
+            scaledIntersect.x, scaledIntersect.y, scaledIntersect.z
             // we know intersection is not null because it was assigned
             // in an if statement with the same condition.
         ])
@@ -80,9 +67,9 @@ export function createVector(
         })
 
         head.position.set(
-            scaledIntersect!.x + dir.x * HEAD_LENGTH / 2,
-            scaledIntersect!.y + dir.y * HEAD_LENGTH / 2,
-            scaledIntersect!.z + dir.z * HEAD_LENGTH / 2
+            scaledIntersect.x + dir.x * HEAD_LENGTH / 2,
+            scaledIntersect.y + dir.y * HEAD_LENGTH / 2,
+            scaledIntersect.z + dir.z * HEAD_LENGTH / 2
         )
 
     } else {

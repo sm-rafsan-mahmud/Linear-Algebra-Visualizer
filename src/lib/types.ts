@@ -8,6 +8,7 @@ export type MatrixData ={
     nameID: string;
     values: string[][];
 }
+
 export type AxesObject = {
     xAxis: Line2,
     yAxis: Line2,
@@ -33,9 +34,9 @@ export type PgramObject = {
     vu: Line2 | null,
     pgram: THREE.Mesh,
     color: number,
-    pos: Point3D,
-    u: VectorObject,
-    v: VectorObject
+    sum: Point3D,
+    u: Point3D,
+    v: Point3D
 }
 
 export type RowData = {

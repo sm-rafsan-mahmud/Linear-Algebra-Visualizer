@@ -2,15 +2,8 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import type { Point3D, VectorObject, PgramObject } from "./types";
-
-function isChopped(pos: Point3D, gridSize: number) {
-    if (Math.abs(pos.x) > gridSize) { return true }
-    if (Math.abs(pos.y) > gridSize) { return true }
-    if (Math.abs(pos.z) > gridSize) { return true }
-
-    return false
-}
+import type { Point3D, PgramObject } from "./types";
+import { getScaledPos, isChopped } from './utilFunctions';
 
 function chopAndScale(pos: Point3D, realSize: number, gridSize: number): Point3D {
     if (Math.abs(pos.x) > gridSize || Math.abs(pos.y) > gridSize || Math.abs(pos.z) > gridSize) {
@@ -25,29 +18,24 @@ function chopAndScale(pos: Point3D, realSize: number, gridSize: number): Point3D
     return getScaledPos(pos, realSize, gridSize)
 }
 
-function getScaledPos(pos: Point3D, realSize: number, gridSize: number): Point3D {
-    const ratio = realSize / gridSize
-    return { x: pos.x * ratio, y: pos.y * ratio, z: pos.z * ratio }
-}
-
 export function createPgramVis(
     scene: THREE.Scene,
-    u: VectorObject,
-    v: VectorObject,
-    pos: Point3D,
+    u: Point3D,
+    v: Point3D,
+    sum: Point3D,
     color: number,
     realSize: number,
     size: number
 ): PgramObject {
     // chop vectors if needed and scale them to the size ratio
-    const uPos   = chopAndScale(u.pos, realSize, size)
-    const vPos   = chopAndScale(v.pos, realSize, size)
-    const sumPos = chopAndScale(pos,   realSize, size)
+    const uPos   = chopAndScale(u, realSize, size)
+    const vPos   = chopAndScale(v, realSize, size)
+    const sumPos = chopAndScale(sum,   realSize, size)
     
     // check if vectors need to be chopped (alters rendering)
-    const uChopped   = isChopped(u.pos, size)
-    const vChopped   = isChopped(v.pos, size)
-    const sumChopped = isChopped(pos, size)
+    const uChopped   = isChopped(u, size)
+    const vChopped   = isChopped(v, size)
+    const sumChopped = isChopped(sum, size)
 
     // only render line from u to u+v if neither are uChopped
     let uv: Line2 | null = null
@@ -114,7 +102,7 @@ export function createPgramVis(
 
     scene.add(pgram)
 
-    return { uv, vu, pgram, color, pos, u, v }
+    return { uv, vu, pgram, color, sum, u, v }
 }
 
 export function disposePgramVis(scene: THREE.Scene, pgramVis: PgramObject) {
