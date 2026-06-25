@@ -55,6 +55,8 @@ export default function TransformationPage() {
     setRows([...rows, { id: maxId + 1, value: "" }]);
   }
 
+  
+
   function tryParseColumnVector(values: string[][]) {
     if (!values.every((r) => r.length === 1)) return null;
     if (values.length !== 2 && values.length !== 3) return null;
