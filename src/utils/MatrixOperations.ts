@@ -1,4 +1,4 @@
-import  {add, subtract, multiply, transpose, inv, det} from "mathjs";
+import  {add, subtract, multiply, transpose, inv, det, eigs} from "mathjs";
 
 export function addMatrices(A: number[][], B: number[][]): number[][] {
     return add(A, B) as number[][];
@@ -32,4 +32,14 @@ export function inverseMatrix(A: number[][]): number[][] {
         throw new Error("Matrix must be square to compute inverse.");
     }
     return inv(A) as number[][];
+}
+
+export function eigenSystem(A: number[][]){
+    const result = eigs(A);
+
+    return {
+        values: result.values,
+        vectors: result.eigenvectors,
+    }
+    
 }
