@@ -14,7 +14,7 @@ type MatrixData = {
   values: string[][];
 };
 
-function buildScope(matrices: MatrixData[]) {
+export function buildScope(matrices: MatrixData[]) {
   const scope: Record<string, math.Matrix> = {};
   matrices.forEach(mat => {
     scope[mat.nameID] = matrix(MatrixParser(mat.values));
