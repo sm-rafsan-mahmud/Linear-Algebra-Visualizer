@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
@@ -68,13 +69,13 @@ export default function TransformationPage() {
   // const [matrixColors, setMatrixColors] = useState<string[]>([])
   // const [resultColors, setResultColors] = useState<string[]>([])
 
-  function tryParseColumnVector(values: string[][]) {
-    if (!values.every((r) => r.length === 1)) return null;
-    if (values.length !== 2 && values.length !== 3) return null;
-    const nums = values.map((r) => parseFloat(r[0]));
-    if (nums.some(isNaN)) return null;
-    return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
-  }
+  // function tryParseColumnVector(values: string[][]) {
+  //   if (!values.every((r) => r.length === 1)) return null;
+  //   if (values.length !== 2 && values.length !== 3) return null;
+  //   const nums = values.map((r) => parseFloat(r[0]));
+  //   if (nums.some(isNaN)) return null;
+  //   return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
+  // }
 
   function handleAddMatrix() {
     addMatrix({ name: nameID, values: [[""]] });
@@ -92,7 +93,7 @@ export default function TransformationPage() {
       try {
         const scope = buildScope(matrices, vectors);
         const raw = math.evaluate(row.value, scope);
-        const _formatted = NormalizeMatrix(raw);
+       // const _formatted = NormalizeMatrix(raw);
         //const vec = tryParseColumnVector(formatted);
         // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
         // else clearResultVector(i);
