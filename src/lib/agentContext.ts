@@ -1,6 +1,6 @@
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
-import { matrix } from "../tools/MatrixTools";
+import { matrix } from "../tools/matrixTools";
 import { vector } from "../tools/vectorTools";
 
 export function buildAgentContext() {
