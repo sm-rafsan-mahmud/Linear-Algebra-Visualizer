@@ -45,11 +45,12 @@ export function useTransformationPage() {
 
     const {
         drawAxes,
+        setZLblVisible,
+        setAxisLabelAngles,
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setZLblVisible,
-        setAxisLabelAngles
+        drawTransformGrid
     } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
     const {
@@ -161,6 +162,14 @@ export function useTransformationPage() {
 
         controlsRef.current = new OrbitControls(perspCamera, renderer.domElement)
         controlsRef.current.enableZoom = false
+
+        const transform = [
+            [1, 2, 0],
+            [3, 1, 0],
+            [0, 0, 1]
+        ]
+
+        drawTransformGrid(scene, transform)
 
         async function loadFont() {
             const font = await getFont()

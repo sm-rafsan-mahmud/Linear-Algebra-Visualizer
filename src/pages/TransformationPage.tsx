@@ -37,8 +37,6 @@ export default function TransformationPage() {
     CAM_2D,
     setUserVector,
     clearUserVector
-    // setResultVector,
-    // clearResultVector,
   } = useTransformationPage();
   const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
 
@@ -62,7 +60,7 @@ export default function TransformationPage() {
 
     vectors.forEach((vec, i) => {
       const nums = vec.values.map((v) => parseFloat(v))
-      const allValid = nums.length >= 2 && nums.every((n) => !isNaN(n))
+      const allValid = nums.length >= 2 && nums.length <= 3 && nums.every((n) => !isNaN(n))
       if (!allValid) return
 
       const x = nums[0]
@@ -80,14 +78,6 @@ export default function TransformationPage() {
   }
 
   // const [resultColors, setResultColors] = useState<string[]>([])
-
-  function tryParseColumnVector(values: string[][]) {
-    if (!values.every((r) => r.length === 1)) return null;        // check if it's a single column
-    if (values.length !== 2 && values.length !== 3) return null;  // allow only 2D or 3D vectors
-    const nums = values.map((r) => parseFloat(r[0]));
-    if (nums.some(isNaN)) return null;
-    return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
-  }
 
   function handleAddMatrix() {
     addMatrix({ name: nameID, values: [[""]] });
