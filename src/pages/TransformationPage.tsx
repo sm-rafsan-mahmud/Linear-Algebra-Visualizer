@@ -87,13 +87,13 @@ export default function TransformationPage() {
   }
 
   function recomputeAll(updatedRows = rows) {
-    updatedRows.forEach((row, i) => {
+    updatedRows.forEach((row) => {
       if (!row.value.trim()) return;
       try {
         const scope = buildScope(matrices, vectors);
         const raw = math.evaluate(row.value, scope);
-        const formatted = NormalizeMatrix(raw);
-        const vec = tryParseColumnVector(formatted);
+        const _formatted = NormalizeMatrix(raw);
+        //const vec = tryParseColumnVector(formatted);
         // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
         // else clearResultVector(i);
       } catch {
