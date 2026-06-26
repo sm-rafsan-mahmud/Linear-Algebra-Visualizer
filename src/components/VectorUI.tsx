@@ -7,10 +7,12 @@ export default function VectorUI({
   vector,
   selectedName,
   setSelectedName,
+  color,
 }: {
   vector: VectorData;
   selectedName: string | null;
   setSelectedName: (name: string) => void;
+  color?: string;
 }) {
   const updateVector = useVectorStore((s) => s.updateVector);
 
@@ -39,8 +41,21 @@ export default function VectorUI({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <strong>{vector.name}</strong>
+        {/* Name + color dot */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {color && (
+            <div style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: color,
+              flexShrink: 0,
+            }} />
+          )}
+          <strong>{vector.name}</strong>
+        </div>
 
+        {/* Resize controls */}
         <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
           <span style={labelStyle}>Length</span>
           <button style={btnStyle} onClick={() => handleResize(-1)}>−</button>

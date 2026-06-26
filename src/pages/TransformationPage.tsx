@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
 import type { RowData, MatrixData, VectorData } from "../lib/types";
@@ -15,6 +14,16 @@ import ChatBox from "../components/chatBox";
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
 
+const VECTOR_COLORS = [
+  "#E74C3C", "#3498DB", "#2ECC71",
+  "#F1C40F", "#9B59B6", "#E67E22",
+  "#1ABC9C", "#E91E63", "#FF5722", "#00BCD4",
+];
+
+function getVectorColor(idx: number): string {
+  return VECTOR_COLORS[idx % VECTOR_COLORS.length];
+}
+
 export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   const scope: Record<string, math.Matrix> = {};
 
@@ -29,23 +38,16 @@ export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   return scope;
 }
 
-// function getDefaultColor(): string {
-//   const DEFAULT_COLORS = [
-//     "#E74C3C", "#3498DB", "#2ECC71",
-//     "#F1C40F", "#9B59B6", "#E67E22"
-//   ]
-
-//   return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
-// }
-
 export default function TransformationPage() {
   const {
     mountRef,
     setCameraPosition,
     CAM_3D,
     CAM_2D,
-    // setResultVector,
-    // clearResultVector,
+    setMatrixVector,
+    clearMatrixVector,
+    setResultVector,
+    clearResultVector,
   } = useTransformationPage();
 
   const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
@@ -60,22 +62,59 @@ export default function TransformationPage() {
   const [nameID, setNameID] = useState("A");
   const [vectorName, setVectorName] = useState("a");
 
+  // Sync vector store → Three.js
+  useEffect(() => {
+    vectors.forEach((vec, i) => {
+      const nums = VectorParser(vec.values);
+
+      if (nums.length < 2 || nums.length > 3 || nums.some(isNaN)) {
+        clearMatrixVector(i);
+        return;
+      }
+
+      setMatrixVector(i, nums[0], nums[1], nums[2] ?? 0, getVectorColor(i), vec.name);
+    });
+
+    // Clear leftover slots when vectors are deleted
+    for (let i = vectors.length; i < 20; i++) {
+      clearMatrixVector(i);
+    }
+  }, [vectors]);
+
+  function tryParseColumnVector(values: string[][]) {
+    if (!values.every((r) => r.length === 1)) return null;
+    if (values.length !== 2 && values.length !== 3) return null;
+    const nums = values.map((r) => parseFloat(r[0]));
+    if (nums.some(isNaN)) return null;
+    return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
+  }
+
+  function recomputeAll(updatedRows = rows) {
+    updatedRows.forEach((row, i) => {
+      if (!row.value.trim()) {
+        clearResultVector(i);
+        return;
+      }
+      try {
+        const scope = buildScope(matrices, vectors);
+        const raw = math.evaluate(row.value, scope);
+        const formatted = NormalizeMatrix(raw);
+        const vec = tryParseColumnVector(formatted);
+        if (vec) {
+          setResultVector(i, vec.x, vec.y, vec.z, getVectorColor(i), row.value);
+        } else {
+          clearResultVector(i);
+        }
+      } catch {
+        clearResultVector(i);
+      }
+    });
+  }
+
   function addNewBox() {
     const maxId = rows.reduce((m, r) => (r.id > m ? r.id : m), 0);
     setRows([...rows, { id: maxId + 1, value: "" }]);
   }
-
-  
-  // const [matrixColors, setMatrixColors] = useState<string[]>([])
-  // const [resultColors, setResultColors] = useState<string[]>([])
-
-  // function tryParseColumnVector(values: string[][]) {
-  //   if (!values.every((r) => r.length === 1)) return null;
-  //   if (values.length !== 2 && values.length !== 3) return null;
-  //   const nums = values.map((r) => parseFloat(r[0]));
-  //   if (nums.some(isNaN)) return null;
-  //   return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
-  // }
 
   function handleAddMatrix() {
     addMatrix({ name: nameID, values: [[""]] });
@@ -85,22 +124,6 @@ export default function TransformationPage() {
   function handleAddVector() {
     addVector({ name: vectorName, values: [""] });
     setVectorName("");
-  }
-
-  function recomputeAll(updatedRows = rows) {
-    updatedRows.forEach((row) => {
-      if (!row.value.trim()) return;
-      try {
-        const scope = buildScope(matrices, vectors);
-        const raw = math.evaluate(row.value, scope);
-       // const _formatted = NormalizeMatrix(raw);
-        //const vec = tryParseColumnVector(formatted);
-        // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
-        // else clearResultVector(i);
-      } catch {
-        // clearResultVector(i);
-      }
-    });
   }
 
   return (
@@ -158,12 +181,13 @@ export default function TransformationPage() {
 
           {/* VECTORS */}
           <div>
-            {vectors.map((v) => (
+            {vectors.map((v, i) => (
               <VectorUI
                 key={v.name}
                 vector={v}
                 selectedName={selectedName}
                 setSelectedName={setSelectedName}
+                color={getVectorColor(i)}
               />
             ))}
           </div>
