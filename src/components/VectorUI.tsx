@@ -45,8 +45,12 @@ export default function VectorUI({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <strong>{vector.name}</strong>
+        {/* Name*/}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <strong>{vector.name}</strong>
+        </div>
 
+        {/* Resize controls */}
         <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
           <span style={labelStyle}>Length</span>
           <button style={btnStyle} onClick={() => handleResize(-1)}>−</button>
