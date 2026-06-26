@@ -34,7 +34,9 @@ export type VectorObject = {
     shaft: Line2
     head:  THREE.Mesh
     pos:   Point3D,
-    color: number
+    color: number,
+    name: string,
+    label: THREE.Mesh
 }
 
 export type PgramObject = {
@@ -42,9 +44,9 @@ export type PgramObject = {
     vu: Line2 | null,
     pgram: THREE.Mesh,
     color: number,
-    pos: Point3D,
-    u: VectorObject,
-    v: VectorObject
+    sum: Point3D,
+    u: Point3D,
+    v: Point3D
 }
 
 export type RowData = {

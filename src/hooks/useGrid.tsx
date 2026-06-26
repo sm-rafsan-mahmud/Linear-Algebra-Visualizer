@@ -6,167 +6,136 @@ import { createCoordinates, disposeCoordinates } from '../lib/createCoordinates'
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import type { AxisLabelsObject, AxesObject } from '../lib/types';
 import { useRef } from 'react';
-import { useVectors } from './useVectors';
+import type { Font } from 'three/addons/loaders/FontLoader.js'
 
-export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
-    sceneRef: React.RefObject<THREE.Scene | null>,
-    axisLabelsRef: React.RefObject<AxisLabelsObject | null>,
-    isMountedRef: React.RefObject<boolean>
+export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
+    REAL_GRID_SIZE: number,
+    gridSizeRef: React.RefObject<number>,
+    cachedFontRef: React.RefObject<Font | null>
 }) {
     // grid variables
-    const REAL_GRID_SIZE = 10;
-    const gridSizeRef    = useRef<number>(5)
-    const gridStepRef    = useRef<number>(0.5)
-    const majorStepRef   = useRef<number>(2)
+    const MINOR_GRID_COLOR = 0xaaaaaa
+    const MAJOR_GRID_COLOR = 0xffffff
+    const MIN_GRID_SIZE    = 1e-4
+    const MAX_GRID_SIZE    = 1e5
+    const ZOOM_FACTOR      = 1.1
+    const gridStepRef      = useRef<number>(0.5)
+    const majorStepRef     = useRef<number>(2)
 
     // grid objects (needed for cleanup)
-    const axesRef      = useRef<AxesObject | null>(null)
-    const gridRef      = useRef<LineSegments2 | null>(null)
-    const majorGridRef = useRef<LineSegments2 | null>(null)
-    const coordsRef    = useRef<THREE.Mesh[] | null>(null)
+    const axesRef       = useRef<AxesObject | null>(null)
+    const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
+    const gridRef       = useRef<LineSegments2 | null>(null)
+    const majorGridRef  = useRef<LineSegments2 | null>(null)
+    const coordsRef     = useRef<THREE.Mesh[] | null>(null)
 
-    const {
-        redrawVectors,
-        disposeVectors,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram
-    } = useVectors({ sceneRef, realSize: REAL_GRID_SIZE, gridSizeRef })
-
-    const drawAxes = () => {
-        axesRef.current = createAxes(sceneRef.current!, REAL_GRID_SIZE, 0xff0000, 0x00ff00, 0x0000ff)
-        initLabels(isMountedRef)
+    const drawAxes = (scene: THREE.Scene) => {
+        axesRef.current = createAxes(scene, REAL_GRID_SIZE)
+        axisLabelsRef.current = createAxisLabels(scene, 11, cachedFontRef.current!)
     }
     
-    const drawGrid = () => {
-        gridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
-        majorGridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
+    const drawGrid = (scene: THREE.Scene) => {
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
         if (coordsRef.current) {
-            disposeCoordinates(sceneRef.current!, coordsRef.current!)
+            disposeCoordinates(scene, coordsRef.current!)
         }
-        initCoords(isMountedRef)
+        initCoords(scene)
     }
 
-    const disposeAllGridObjects = () => {
-        if (gridRef.current) { disposeGrid(sceneRef.current!, gridRef.current) }
-        if (majorGridRef.current) { disposeGrid(sceneRef.current!, majorGridRef.current) }
-        if (axesRef.current) { disposeAxes(sceneRef.current!, axesRef.current) }
+    const disposeAllGridObjects = (scene: THREE.Scene) => {
+        if (gridRef.current) { disposeGrid(scene, gridRef.current) }
+        if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
+        if (axesRef.current) { disposeAxes(scene, axesRef.current) }
         if (axisLabelsRef.current) {
-            disposeAxisLabels(sceneRef.current!, axisLabelsRef.current)
+            disposeAxisLabels(scene, axisLabelsRef.current)
         }
-        if (coordsRef.current) { disposeCoordinates(sceneRef.current!, coordsRef.current) }
-        disposeVectors()
+        if (coordsRef.current) { disposeCoordinates(scene, coordsRef.current) }
     }
 
-    const resizeGrid = (direction: 'out' | 'in') => {
-        // change the gridSize on scroll (not REAL_GRID_SIZE).
-        const ZOOM_FACTOR = 1.1
-        const MIN_SIZE = 1e-4
-        const MAX_SIZE = 1e5
+    const resizeGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
+        // change gridSizeRef's value
 
         const factor = direction === 'out' ? ZOOM_FACTOR : 1 / ZOOM_FACTOR
-        gridSizeRef.current = Math.max(MIN_SIZE, Math.min(MAX_SIZE, gridSizeRef.current * factor))
+        gridSizeRef.current = Math.max(MIN_GRID_SIZE, Math.min(MAX_GRID_SIZE, gridSizeRef.current * factor))
 
-        rescaleGrid(direction)
-        redrawVectors()
+        rescaleGrid(direction, scene)
 
         // dispose of and redraw the grid
-        if (gridRef.current) { disposeGrid(sceneRef.current!, gridRef.current) }
-        if (majorGridRef.current) { disposeGrid(sceneRef.current!, majorGridRef.current) }
+        if (gridRef.current) { disposeGrid(scene, gridRef.current) }
+        if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
 
-        gridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, 0xaaaaaa)
-        majorGridRef.current = createGrid(sceneRef.current!, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, 0xffffff)
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
     }
 
-    const rescaleGrid = (direction: 'out' | 'in') => {
+    const rescaleGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
         const ratio = majorStepRef.current / gridSizeRef.current
         const tooSmall = ratio < 0.25
         const tooLarge = ratio > 0.75
 
-        if (!tooSmall && !tooLarge) { 
-            disposeCoordinates(sceneRef.current!, coordsRef.current!)
-            initCoords(isMountedRef)   
-            return
-        }
+        if (tooSmall || tooLarge) {
+            const magnitude = Math.pow(10, Math.floor(Math.log10(majorStepRef.current)))
+            const criticalDigit = Math.round(majorStepRef.current / magnitude) // gives 1, 2, or 5
+            
+            const clean = (n: number) => parseFloat(n.toPrecision(1))
 
-        const magnitude = Math.pow(10, Math.floor(Math.log10(majorStepRef.current)))
-        const criticalDigit = Math.round(majorStepRef.current / magnitude) // gives 1, 2, or 5
-        
-        const clean = (n: number) => parseFloat(n.toPrecision(1))
-
-        if (direction === 'out') {
-            switch (criticalDigit) {
-                case 1:
-                    majorStepRef.current = clean(2 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-                case 2:
-                    majorStepRef.current = clean(5 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 5
-                    break
-                case 5:
-                    majorStepRef.current = clean(10 * magnitude)     // e.g. 5 -> 10
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-            }
-        } else {
-            switch (criticalDigit) {
-                case 1:
-                    majorStepRef.current = clean(0.5 * magnitude)    // e.g. 0.1 -> 0.05
-                    gridStepRef.current = majorStepRef.current / 5
-                    break
-                case 2:
-                    majorStepRef.current = clean(magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
-                case 5:
-                    majorStepRef.current = clean(2 * magnitude)
-                    gridStepRef.current = majorStepRef.current / 4
-                    break
+            if (direction === 'out') {
+                switch (criticalDigit) {
+                    case 1:
+                        majorStepRef.current = clean(2 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                    case 2:
+                        majorStepRef.current = clean(5 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 5
+                        break
+                    case 5:
+                        majorStepRef.current = clean(10 * magnitude)     // e.g. 5 -> 10
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                }
+            } else {
+                switch (criticalDigit) {
+                    case 1:
+                        majorStepRef.current = clean(0.5 * magnitude)    // e.g. 0.1 -> 0.05
+                        gridStepRef.current = majorStepRef.current / 5
+                        break
+                    case 2:
+                        majorStepRef.current = clean(magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                    case 5:
+                        majorStepRef.current = clean(2 * magnitude)
+                        gridStepRef.current = majorStepRef.current / 4
+                        break
+                }
             }
         }
 
-        disposeCoordinates(sceneRef.current!, coordsRef.current!)
-        initCoords(isMountedRef)
+        disposeCoordinates(scene, coordsRef.current!)
+        initCoords(scene)
     }
 
-        // const magnitude = Math.pow(10, Math.floor(Math.log10(gridSizeRef.current)))
-        // const normalized = gridSizeRef.current / magnitude  // in range [1, 10)
+    const setZLblVisible = (visible: boolean) => {
+        if (!axisLabelsRef.current) return
+        axisLabelsRef.current.zLbl.visible = visible
+    }
 
-        // let multiplier: number
-        // if (normalized < 2)      multiplier = 1
-        // else if (normalized < 5) multiplier = 2
-        // else                     multiplier = 5
+    const setAxisLabelAngles = (camera: THREE.Camera) => {
+        if (!axisLabelsRef.current) return
 
-        // const newMajorStep = magnitude >= 1
-        //     ? Math.round(multiplier * magnitude)
-        //     : multiplier / Math.round(1 / magnitude)
+        const { xLbl, yLbl, zLbl } = axisLabelsRef.current!
 
-        // const newMinorStep = multiplier === 5
-        //     ? newMajorStep / 5
-        //     : newMajorStep / 4
-
-        // majorStepRef.current = newMajorStep
-        // gridStepRef.current = newMinorStep
-
-    async function initLabels(isMountedRef: { current: boolean }) {
-        const scene = sceneRef.current!
-        const labels = await createAxisLabels(scene, 11, 0xff0000, 0x00ff00, 0x0000ff)
-    
-        if (!isMountedRef.current || sceneRef.current !== scene) {
-            disposeAxisLabels(scene, labels)
-            return
+        xLbl.quaternion.copy(camera.quaternion)
+        yLbl.quaternion.copy(camera.quaternion)
+        if (camera instanceof THREE.PerspectiveCamera) {
+            // zLbl isn't visible in 2D mode so no need to change its angle
+            zLbl.quaternion.copy(camera.quaternion)
         }
-    
-        axisLabelsRef.current = labels
     }
 
-    async function initCoords(isMountedRef: { current: boolean }) {
-        const scene = sceneRef.current!
-        
+    const initCoords = (scene: THREE.Scene) => {
         // define the number of coordinate labels
         let numLabels: number
         if (gridSizeRef.current % majorStepRef.current != 0) { // if the gridSize is not a multiple of the major grid step
@@ -177,16 +146,15 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         } else {
             numLabels = gridSizeRef.current / majorStepRef.current
             // ex. if size = 6 & step = 3, we want 3 labels (-4, -2, 0, 2, 4) because we don't want labels at the boundaries.
-            // numLabels = 3 producing 5 labels is explained by looking at ../lib/createCoordinates.ts
+            // numLabels = 3 producing 5 labels is because numLabels refers to the number of labels in [0, size)
         }
-        const coords = await createCoordinates(scene, REAL_GRID_SIZE / gridSizeRef.current, majorStepRef.current, numLabels, 0xffffff)
-
-        if (!isMountedRef.current || sceneRef.current !== scene) {
-            disposeCoordinates(scene, coords)
-            return
-        }
-
-        coordsRef.current = coords
+        coordsRef.current = createCoordinates(
+            scene,
+            REAL_GRID_SIZE / gridSizeRef.current,
+            majorStepRef.current,
+            numLabels,
+            cachedFontRef.current!
+        )
     }
  
     return {
@@ -194,12 +162,8 @@ export function useGrid({ sceneRef, axisLabelsRef, isMountedRef } : {
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram
+        setZLblVisible,
+        setAxisLabelAngles
     }
 
 }

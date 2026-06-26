@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand'
 import type { MatrixData } from "../lib/types";
 
 interface MatrixStore {

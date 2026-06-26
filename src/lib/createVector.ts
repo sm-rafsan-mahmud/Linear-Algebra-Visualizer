@@ -2,31 +2,23 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
+import type { Font } from 'three/addons/loaders/FontLoader.js'
 import type { Point3D, VectorObject } from './types'
+import { makeLabel } from './makeLabel'
+import { getScaledPos, isChopped } from './utilFunctions'
 
 const HEAD_RADIUS  = 0.15
 const HEAD_LENGTH  = 0.25          // world units, not a proportion of vector length
 const SEGMENTS     = 16
-
-function isChopped(pos: Point3D, gridSize: number) {
-    if (Math.abs(pos.x) > gridSize) { return true }
-    if (Math.abs(pos.y) > gridSize) { return true }
-    if (Math.abs(pos.z) > gridSize) { return true }
-
-    return false
-}
-
-function getScaledPos(pos: Point3D, realSize: number, gridSize: number): Point3D {
-    const ratio = realSize / gridSize
-    return { x: pos.x * ratio, y: pos.y * ratio, z: pos.z * ratio }
-}
 
 export function createVector(
     scene: THREE.Scene,
     pos: Point3D,
     color: number,
     realSize: number,
-    gridSize: number
+    gridSize: number,
+    name: string,
+    font: Font
 ): VectorObject {
     const scaledPos = getScaledPos(pos, realSize, gridSize)
  
@@ -34,12 +26,11 @@ export function createVector(
     // if so, we find the point on the grid edge it intersects
     // then we chop it.
     const chop: boolean = isChopped(pos, gridSize)
-    
 
     // create the shaft
     const shaftGeometry = new LineGeometry()
     let shaftMaterial: LineMaterial
-    let scaledIntersect: Point3D
+    let scaledIntersect: Point3D | null = null
 
     // create the head
     const headGeometry = new THREE.ConeGeometry(HEAD_RADIUS, HEAD_LENGTH, SEGMENTS)
@@ -57,11 +48,11 @@ export function createVector(
         if (pos.z !== 0) t = Math.min(t, gridSize / Math.abs(pos.z))
 
         const intersection = { x: t * pos.x, y: t * pos.y, z: t * pos.z }
-        scaledIntersect= getScaledPos(intersection, realSize, gridSize)
+        scaledIntersect = getScaledPos(intersection, realSize, gridSize)
 
         shaftGeometry.setPositions([
             0, 0, 0,
-            scaledIntersect!.x, scaledIntersect!.y, scaledIntersect!.z
+            scaledIntersect.x, scaledIntersect.y, scaledIntersect.z
             // we know intersection is not null because it was assigned
             // in an if statement with the same condition.
         ])
@@ -76,9 +67,9 @@ export function createVector(
         })
 
         head.position.set(
-            scaledIntersect!.x + dir.x * HEAD_LENGTH / 2,
-            scaledIntersect!.y + dir.y * HEAD_LENGTH / 2,
-            scaledIntersect!.z + dir.z * HEAD_LENGTH / 2
+            scaledIntersect.x + dir.x * HEAD_LENGTH / 2,
+            scaledIntersect.y + dir.y * HEAD_LENGTH / 2,
+            scaledIntersect.z + dir.z * HEAD_LENGTH / 2
         )
 
     } else {
@@ -100,20 +91,45 @@ export function createVector(
         )
     }
 
-    const shaft         = new Line2(shaftGeometry, shaftMaterial)
+    const shaft = new Line2(shaftGeometry, shaftMaterial)
     shaft.computeLineDistances()
  
     const yAxis = new THREE.Vector3(0, 1, 0)
     head.quaternion.setFromUnitVectors(yAxis, dir)
+
+    // create vector label
+    let lblPos: Point3D | null
+    const offset: Point3D = {
+        x: pos.x < 0 ? -0.25 : 0.25,
+        y: pos.y < 0 ? -0.25 : 0.25,
+        z: pos.z < 0 ? -0.25 : 0.25
+    }
+    if (scaledIntersect) {
+        lblPos = {
+            x: scaledIntersect.x + offset.x,
+            y: scaledIntersect.y + offset.y,
+            z: scaledIntersect.z + offset.z
+        }
+    } else {
+        lblPos = {
+            x: scaledPos.x + offset.x,
+            y: scaledPos.y + offset.y,
+            z: scaledPos.z + offset.z
+        }
+    }
+
+    const label = makeLabel(name, color, lblPos, font)
  
-    scene.add(shaft, head)
-    return { shaft, head, pos, color }
+    scene.add(shaft, head, label)
+    return { shaft, head, pos, color, name, label }
 }
 
 export function disposeVector(scene: THREE.Scene, vector: VectorObject) {
-    scene.remove(vector.shaft, vector.head)
-    vector.shaft.geometry.dispose()
+    scene.remove(vector.shaft, vector.head, vector.label)
+    vector.shaft.geometry.dispose();
+    (vector.shaft.material as THREE.Material).dispose()
     vector.head.geometry.dispose();
-    (vector.shaft.material as THREE.Material).dispose();
-    (vector.head.material as THREE.Material).dispose();
+    (vector.head.material as THREE.Material).dispose()
+    vector.label.geometry.dispose();
+    (vector.label.material as THREE.Material).dispose()
 }

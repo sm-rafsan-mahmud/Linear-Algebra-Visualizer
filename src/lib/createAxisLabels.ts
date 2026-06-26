@@ -1,23 +1,20 @@
 import * as THREE from 'three'
-import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { Font } from 'three/addons/loaders/FontLoader.js'
 import { makeLabel } from './makeLabel'
 import type { AxisLabelsObject } from './types'
 
-export async function createAxisLabels(
+export function createAxisLabels(
     scene: THREE.Scene,
     size: number,
-    xColor: number,
-    yColor: number,
-    zColor: number
-): Promise<AxisLabelsObject> {
-    const loader = new FontLoader()
-    const font = await loader.loadAsync(
-        'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
-    )
-    
-    const xLbl = makeLabel('X', xColor, { x: size + 0.5, y: 0, z: 0 }, font)
-    const yLbl = makeLabel('Y', yColor, { x: 0, y: size + 0.5, z: 0 }, font)
-    const zLbl = makeLabel('Z', zColor, { x: 0, y: 0, z: size - 0.5 }, font)
+    font: Font
+): AxisLabelsObject {
+    const red = 0xff0000
+    const green = 0x00ff00
+    const blue = 0x0000ff
+
+    const xLbl = makeLabel('X', red, { x: size + 0.5, y: 0, z: 0 }, font)
+    const yLbl = makeLabel('Y', green, { x: 0, y: size + 0.5, z: 0 }, font)
+    const zLbl = makeLabel('Z', blue, { x: 0, y: 0, z: size - 0.5 }, font)
 
     scene.add(xLbl, yLbl, zLbl)
     return { xLbl, yLbl, zLbl }

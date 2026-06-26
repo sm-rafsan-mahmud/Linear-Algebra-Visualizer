@@ -28,14 +28,23 @@ export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   return scope;
 }
 
+// function getDefaultColor(): string {
+//   const DEFAULT_COLORS = [
+//     "#E74C3C", "#3498DB", "#2ECC71",
+//     "#F1C40F", "#9B59B6", "#E67E22"
+//   ]
+
+//   return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
+// }
+
 export default function TransformationPage() {
   const {
     mountRef,
     setCameraPosition,
     CAM_3D,
     CAM_2D,
-    setResultVector,
-    clearResultVector,
+    // setResultVector,
+    // clearResultVector,
   } = useTransformationPage();
 
   const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
@@ -56,6 +65,8 @@ export default function TransformationPage() {
   }
 
   
+  // const [matrixColors, setMatrixColors] = useState<string[]>([])
+  // const [resultColors, setResultColors] = useState<string[]>([])
 
   function tryParseColumnVector(values: string[][]) {
     if (!values.every((r) => r.length === 1)) return null;
@@ -83,10 +94,10 @@ export default function TransformationPage() {
         const raw = math.evaluate(row.value, scope);
         const formatted = NormalizeMatrix(raw);
         const vec = tryParseColumnVector(formatted);
-        if (vec) setResultVector(i, vec.x, vec.y, vec.z);
-        else clearResultVector(i);
+        // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
+        // else clearResultVector(i);
       } catch {
-        clearResultVector(i);
+        // clearResultVector(i);
       }
     });
   }

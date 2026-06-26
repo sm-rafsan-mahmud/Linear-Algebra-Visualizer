@@ -1,28 +1,16 @@
 import * as THREE from 'three'
-import { Font, FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { Font } from 'three/addons/loaders/FontLoader.js'
 import { makeLabel } from './makeLabel'
 
-let cachedFont: Font | null = null
-
-async function getFont(): Promise<Font> {
-    if (cachedFont) return cachedFont
-    const loader = new FontLoader()
-    cachedFont = await loader.loadAsync(
-        'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
-    )
-    return cachedFont
-}
-
-export async function createCoordinates(
+export function createCoordinates(
     scene: THREE.Scene,
     sizeRatio: number,
     step: number,
     numLabels: number,
-    color: number
-): Promise<THREE.Mesh[]> {
-    const font = await getFont()
-
+    font: Font
+): THREE.Mesh[] {
     const coords: THREE.Mesh[] = []
+    const white = 0xffffff
     
     // x-axis labels
     for (let n = -(numLabels - 1); n < numLabels; n++) {
@@ -31,7 +19,7 @@ export async function createCoordinates(
         if (i < 0)
             offset = 0.45
 
-        coords.push(makeLabel(i + '', color, { x: i * sizeRatio - offset, y: -0.4, z: 0 }, font))
+        coords.push(makeLabel(i + '', white, { x: i * sizeRatio - offset, y: -0.4, z: 0 }, font))
     }
 
     // y-axis labels
@@ -42,7 +30,7 @@ export async function createCoordinates(
             if (i < 0)
                 offset = 0.45
 
-            coords.push(makeLabel(i + '', color, { x: -offset, y: i * sizeRatio - 0.4, z: 0 }, font))
+            coords.push(makeLabel(i + '', white, { x: -offset, y: i * sizeRatio - 0.4, z: 0 }, font))
         }
     }
 
@@ -55,7 +43,7 @@ export async function createCoordinates(
                 offset = 0.45
             }
             // we need to store the coord because we need to set it's rotation later.
-            const coord = makeLabel(i + '', color, { x: -offset, y: 0, z: i * sizeRatio }, font) 
+            const coord = makeLabel(i + '', white, { x: -offset, y: 0, z: i * sizeRatio }, font) 
             coord.setRotationFromAxisAngle(
                 new THREE.Vector3(1, 0, 0),
                 Math.PI / 2

@@ -2,49 +2,102 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
-import type { AxisLabelsObject } from '../lib/types';
+import type { Font } from 'three/addons/loaders/FontLoader.js'
+import { getFont } from '../lib/getFont';
+import { useVectors } from './useVectors';
+import type { Point3D } from '../lib/types';
 
-// TODO: Store vectors (maybe new type of Point3D & the Vector? Maybe also need new type to hold the three parts of the vector.)
-// TODO: Start work on transformations.
+function computeOrthoFrustum(frustumSize: number, aspect: number) {
+    return {
+        left: -frustumSize * aspect / 2,
+        right: frustumSize * aspect / 2,
+        top: frustumSize / 2,
+        bottom: -frustumSize / 2
+    }
+}
 
 export function useTransformationPage() {
+    // refs used for Three.js objects
     const mountRef = useRef<HTMLDivElement | null>(null)
     const sceneRef = useRef<THREE.Scene | null>(null)
     const perspectiveCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
     const orthoCameraRef = useRef<THREE.OrthographicCamera | null>(null)
     const activeCameraRef = useRef<'2d' | '3d'>('3d')
     const controlsRef = useRef<OrbitControls | null>(null)
-    const axisLabelsRef = useRef<AxisLabelsObject | null>(null)
-    const isMountedRef = useRef<boolean>(false)
-    const lastZoomTime = useRef(0) // prevents the custom scroll function from working too fast on trackpads
 
-    // camera position constants
+    // refs & constants for internal usage/logic
+    const zoomDirtyRef = useRef(false)
+    const pendingDirectionRef = useRef<'in' | 'out'>('in')
+    const scrollAccumRef = useRef(0)
+    const SCROLL_THRESHOLD = 50  // tune this value
+
+    // camera constants
     const CAM_3D = 0
     const CAM_2D = 1
+    const CAM_NEAR = 0.1
+    const CAM_FAR = 1000
+    const FRUSTUM_SIZE = 24
+
+    // values needed by useGrid & useVectors
+    const REAL_GRID_SIZE = 10
+    const gridSizeRef = useRef<number>(5)
+    const cachedFontRef = useRef<Font | null>(null)
 
     const {
         drawAxes,
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setMatrixVector,
-        clearMatrixVector,
-        setResultVector,
-        clearResultVector,
-        setResultPgram,
-        clearResultPgram
-    } = useGrid({ sceneRef, axisLabelsRef, isMountedRef })
+        setZLblVisible,
+        setAxisLabelAngles
+    } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
+    const {
+        setMatrixVector:   _setMatrixVector,
+        clearMatrixVector: _clearMatrixVector,
+        setResultVector:   _setResultVector,
+        clearResultVector: _clearResultVector,
+        setResultPgram:    _setResultPgram,
+        clearResultPgram:  _clearResultPgram,
+        redrawVectors,
+        disposeVectors,
+        setVectorLabelAngles
+    } = useVectors({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+
+    function colorToNumber(hex: string): number {
+        return parseInt(hex.replace('#', '0x'), 16);
+    }
+
+    // these functions eliminate the need to pass sceneRef around through several hooks.
+    const setMatrixVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
+        _setMatrixVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
+
+    const clearMatrixVector = (idx: number) =>
+        _clearMatrixVector(sceneRef.current!, idx)
+
+    const setResultVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
+        _setResultVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
+
+    const clearResultVector = (idx: number) =>
+        _clearResultVector(sceneRef.current!, idx)
+
+    const setResultPgram = (idx: number, u: Point3D, v: Point3D, sum: Point3D, color: string) =>
+        _setResultPgram(sceneRef.current!, idx, u, v, sum, colorToNumber(color))
+
+    const clearResultPgram = (idx: number) =>
+        _clearResultPgram(sceneRef.current!, idx)
+
+    
     const setCameraPosition = (position: number) => {
-        if (!axisLabelsRef.current || !controlsRef.current) return
+        if (!controlsRef.current) return
         
         if (position === CAM_3D) {
-            axisLabelsRef.current.zLbl.visible = true
+            setZLblVisible(true)
             controlsRef.current.enabled = true
             activeCameraRef.current = '3d'
         
         } else if (position === CAM_2D) {
-            axisLabelsRef.current.zLbl.visible = false
+            setZLblVisible(false)
             controlsRef.current.enabled = false
             activeCameraRef.current = '2d'
         
@@ -53,7 +106,7 @@ export function useTransformationPage() {
 
     useEffect(() => {
         const mount = mountRef.current!
-        isMountedRef.current = true
+        let cancelled = false
 
         const width = mount.clientWidth
         const height = mount.clientHeight
@@ -69,29 +122,16 @@ export function useTransformationPage() {
         scene.background = new THREE.Color(0x002233)
 
         // PerspectiveCamera for 3D view
-        const camera = new THREE.PerspectiveCamera(
-          75,
-          width / height,
-          0.1,
-          1000
-        )
-        perspectiveCameraRef.current = camera;
-
-        camera.position.set(4, -17, 15)
-        camera.up.set(0, 0, 1)
-        camera.lookAt(new THREE.Vector3(0, 0, 0))
+        const perspCamera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
+        perspectiveCameraRef.current = perspCamera;
+        perspCamera.position.set(4, -17, 15)
+        perspCamera.up.set(0, 0, 1)
+        perspCamera.lookAt(new THREE.Vector3(0, 0, 0))
 
         // OrthographicCamera for 2D view—ensures vectors have the correct length.
-        const frustumSize = 24
         const aspect = width / height
-        const orthoCamera = new THREE.OrthographicCamera(
-            -frustumSize * aspect / 2,   // left
-            frustumSize * aspect / 2,   // right
-            frustumSize / 2,            // top
-            -frustumSize / 2,            // bottom
-            0.1,
-            1000
-        )
+        const { left, right, top, bottom } = computeOrthoFrustum(FRUSTUM_SIZE, aspect)
+        const orthoCamera = new THREE.OrthographicCamera(left, right, top, bottom, CAM_NEAR, CAM_FAR)
         orthoCamera.position.set(0, 0, 17)
         orthoCamera.lookAt(new THREE.Vector3(0, 0, 0))
         orthoCameraRef.current = orthoCamera
@@ -104,37 +144,47 @@ export function useTransformationPage() {
             renderer.setSize(width, height)
 
             // Perspective camera
-            camera.aspect = aspect
-            camera.updateProjectionMatrix()
+            perspCamera.aspect = aspect
+            perspCamera.updateProjectionMatrix()
 
             // Orthographic camera — recalculate frustum on resize
             if (orthoCameraRef.current) {
-                orthoCameraRef.current.left   = -frustumSize * aspect / 2
-                orthoCameraRef.current.right  =  frustumSize * aspect / 2
-                orthoCameraRef.current.top    =  frustumSize / 2
-                orthoCameraRef.current.bottom = -frustumSize / 2
+                const { left, right, top, bottom } = computeOrthoFrustum(FRUSTUM_SIZE, aspect)
+                orthoCameraRef.current.left = left
+                orthoCameraRef.current.right = right
+                orthoCameraRef.current.top = top
+                orthoCameraRef.current.bottom = bottom
                 orthoCameraRef.current.updateProjectionMatrix()
             }
         })
         resizeObserver.observe(mount)
 
-        controlsRef.current = new OrbitControls(camera, renderer.domElement)
+        controlsRef.current = new OrbitControls(perspCamera, renderer.domElement)
         controlsRef.current.enableZoom = false
 
-        // grid & axes
-        drawGrid()
-        drawAxes()
+        async function loadFont() {
+            const font = await getFont()
+            if (cancelled) return
+            
+            cachedFontRef.current = font
+
+            // grid & axes depend on font for label creation
+            // so we put them here to ensure it's loaded
+            drawGrid(scene)
+            drawAxes(scene)
+        }
+        loadFont()
         
         // event listener for custom zoom controls
         const handleWheel = (e: WheelEvent) => {
             e.preventDefault()
+            scrollAccumRef.current += e.deltaY
 
-            const now = Date.now()
-            if (now - lastZoomTime.current < 85) return
-            lastZoomTime.current = now
-
-            const direction = e.deltaY > 0 ? 'out' : 'in'
-            resizeGrid(direction)
+            if (Math.abs(scrollAccumRef.current) >= SCROLL_THRESHOLD) {
+                pendingDirectionRef.current = scrollAccumRef.current > 0 ? 'out' : 'in'
+                zoomDirtyRef.current = true
+                scrollAccumRef.current = 0
+            }
         }
 
         mount.addEventListener('wheel', handleWheel, { passive: false })
@@ -147,22 +197,18 @@ export function useTransformationPage() {
                 controlsRef.current.update()
             }
 
-            const activeCamera = activeCameraRef.current === '2d' && orthoCameraRef.current
-                ? orthoCameraRef.current
-                : perspectiveCameraRef.current!
-
-            // labelsRef becomes non-null asynchronously.
-            if (axisLabelsRef.current) {
-                const { xLbl, yLbl, zLbl } = axisLabelsRef.current
-                const is3D = activeCameraRef.current === '3d'
-
-                xLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
-                yLbl.quaternion.copy(is3D ? camera.quaternion : orthoCamera.quaternion)
-                if (is3D) {
-                    zLbl.quaternion.copy(camera.quaternion)
-                }
-
+            if (zoomDirtyRef.current) {
+                zoomDirtyRef.current = false
+                const direction = pendingDirectionRef.current
+                resizeGrid(direction, scene)
+                redrawVectors(scene)
             }
+
+            const is3D = activeCameraRef.current === '3d'
+            const activeCamera = is3D ? perspCamera : orthoCamera
+
+            setAxisLabelAngles(activeCamera)
+            setVectorLabelAngles(activeCamera)
 
             renderer.render(scene, activeCamera)
         }
@@ -170,19 +216,21 @@ export function useTransformationPage() {
         animate();
 
         return () => {
-            isMountedRef.current = false
+            cancelled = true
             cancelAnimationFrame(animationId)
             if(controlsRef.current) {
                 controlsRef.current.dispose()
             }
             resizeObserver.disconnect()
 
-            disposeAllGridObjects()
+            disposeAllGridObjects(scene)
+            disposeVectors(scene)
             mount.removeEventListener('wheel', handleWheel)
 
             renderer.dispose()
             mount.removeChild(renderer.domElement)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return {
