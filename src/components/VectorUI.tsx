@@ -2,18 +2,20 @@ import type { VectorData } from "../lib/types";
 import Vector from "./Vector";
 import { useVectorStore } from "../store/vectorStore";
 import resizeVectorValues from "../utils/ResizeVector";
+import ColorPicker from "./ColorPicker";
+
+interface VectorUIProps {
+  vector: VectorData;
+  selectedName: string | null;
+  setSelectedName: (name: string) => void;
+}
 
 export default function VectorUI({
   vector,
   selectedName,
-  setSelectedName,
-}: {
-  vector: VectorData;
-  selectedName: string | null;
-  setSelectedName: (name: string) => void;
-}) {
+  setSelectedName
+}: VectorUIProps) {
   const updateVector = useVectorStore((s) => s.updateVector);
-
   const len = vector.values.length;
 
   function handleValueChange(i: number, val: string) {
@@ -25,6 +27,10 @@ export default function VectorUI({
     const newLength = Math.max(1, len + deltaLength);
     if (newLength === len) return;
     updateVector(vector.name, resizeVectorValues(vector.values, newLength));
+  }
+
+  function handleColorChange(color: string) {
+    updateVector(vector.name, vector.values, color);
   }
 
   return (
@@ -47,6 +53,9 @@ export default function VectorUI({
           <span style={countStyle}>{len}</span>
           <button style={btnStyle} onClick={() => handleResize(1)}>+</button>
         </div>
+
+        
+        <ColorPicker value={vector.color} onChange={handleColorChange} />
       </div>
 
       <Vector

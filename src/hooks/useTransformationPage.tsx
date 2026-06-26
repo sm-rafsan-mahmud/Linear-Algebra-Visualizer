@@ -53,8 +53,8 @@ export function useTransformationPage() {
     } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
     const {
-        setMatrixVector:   _setMatrixVector,
-        clearMatrixVector: _clearMatrixVector,
+        setUserVector:   _setUserVector,
+        clearUserVector: _clearUserVector,
         setResultVector:   _setResultVector,
         clearResultVector: _clearResultVector,
         setResultPgram:    _setResultPgram,
@@ -69,11 +69,11 @@ export function useTransformationPage() {
     }
 
     // these functions eliminate the need to pass sceneRef around through several hooks.
-    const setMatrixVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
-        _setMatrixVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
+    const setUserVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
+        _setUserVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
 
-    const clearMatrixVector = (idx: number) =>
-        _clearMatrixVector(sceneRef.current!, idx)
+    const clearUserVector = (idx: number) =>
+        _clearUserVector(sceneRef.current!, idx)
 
     const setResultVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>
         _setResultVector(sceneRef.current!, idx, x, y, z, colorToNumber(color), name)
@@ -238,8 +238,8 @@ export function useTransformationPage() {
         setCameraPosition,
         CAM_3D,
         CAM_2D,
-        setMatrixVector,
-        clearMatrixVector,
+        setUserVector,
+        clearUserVector,
         setResultVector,
         clearResultVector,
         setResultPgram,

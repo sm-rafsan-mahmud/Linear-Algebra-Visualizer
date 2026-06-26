@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
 import type { RowData, MatrixData, VectorData } from "../lib/types";
@@ -13,6 +13,7 @@ import ChatBox from "../components/chatBox";
 
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
+import { getDefaultColor } from "../lib/utilFunctions";
 
 export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   const scope: Record<string, math.Matrix> = {};
@@ -28,25 +29,17 @@ export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   return scope;
 }
 
-// function getDefaultColor(): string {
-//   const DEFAULT_COLORS = [
-//     "#E74C3C", "#3498DB", "#2ECC71",
-//     "#F1C40F", "#9B59B6", "#E67E22"
-//   ]
-
-//   return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
-// }
-
 export default function TransformationPage() {
   const {
     mountRef,
     setCameraPosition,
     CAM_3D,
     CAM_2D,
+    setUserVector,
+    clearUserVector
     // setResultVector,
     // clearResultVector,
   } = useTransformationPage();
-
   const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
 
   const matrices = useMatrixStore((s) => s.matrices);
@@ -59,18 +52,38 @@ export default function TransformationPage() {
   const [nameID, setNameID] = useState("A");
   const [vectorName, setVectorName] = useState("a");
 
+  const MAX_VECTOR_SLOTS = 20;
+
+  useEffect(() => {
+    // clear all slots to prevent stale renders.
+    for (let i = 0; i < MAX_VECTOR_SLOTS; i++) {
+      clearUserVector(i)
+    }
+
+    vectors.forEach((vec, i) => {
+      const nums = vec.values.map((v) => parseFloat(v))
+      const allValid = nums.length >= 2 && nums.every((n) => !isNaN(n))
+      if (!allValid) return
+
+      const x = nums[0]
+      const y = nums[1]
+      const z = nums[2] ?? 0
+
+      setUserVector(i, x, y, z, vec.color, vec.name)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vectors])
+
   function addNewBox() {
     const maxId = rows.reduce((m, r) => (r.id > m ? r.id : m), 0);
     setRows([...rows, { id: maxId + 1, value: "" }]);
   }
 
-  
-  // const [matrixColors, setMatrixColors] = useState<string[]>([])
   // const [resultColors, setResultColors] = useState<string[]>([])
 
   function tryParseColumnVector(values: string[][]) {
-    if (!values.every((r) => r.length === 1)) return null;
-    if (values.length !== 2 && values.length !== 3) return null;
+    if (!values.every((r) => r.length === 1)) return null;        // check if it's a single column
+    if (values.length !== 2 && values.length !== 3) return null;  // allow only 2D or 3D vectors
     const nums = values.map((r) => parseFloat(r[0]));
     if (nums.some(isNaN)) return null;
     return { x: nums[0], y: nums[1], z: nums[2] ?? 0 };
@@ -82,29 +95,28 @@ export default function TransformationPage() {
   }
 
   function handleAddVector() {
-    addVector({ name: vectorName, values: [""] });
+    addVector({ name: vectorName, values: [""], color: getDefaultColor() });
     setVectorName("");
   }
 
   function recomputeAll(updatedRows = rows) {
-    updatedRows.forEach((row, i) => {
-      if (!row.value.trim()) return;
-      try {
-        const scope = buildScope(matrices, vectors);
-        const raw = math.evaluate(row.value, scope);
-        const formatted = NormalizeMatrix(raw);
-        const vec = tryParseColumnVector(formatted);
-        // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
-        // else clearResultVector(i);
-      } catch {
-        // clearResultVector(i);
-      }
-    });
+    // updatedRows.forEach((row, i) => {
+    //   if (!row.value.trim()) return;
+    //   try {
+    //     const scope = buildScope(matrices, vectors);
+    //     const raw = math.evaluate(row.value, scope);
+    //     const formatted = NormalizeMatrix(raw);
+    //     // const vec = tryParseColumnVector(formatted);
+    //     // if (vec) setResultVector(i, vec.x, vec.y, vec.z);
+    //     // else clearResultVector(i);
+    //   } catch {
+    //     // clearResultVector(i);
+    //   }
+    // });
   }
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
-
       {/* LEFT PANEL */}
       <div
         style={{

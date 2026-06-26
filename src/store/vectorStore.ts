@@ -5,7 +5,7 @@ interface VectorStore {
   vectors: VectorData[];
 
   addVector: (vector: VectorData) => boolean;
-  updateVector: (name: string, values: string[]) => boolean;
+  updateVector: (name: string, values: string[], color?: string) => boolean;
   removeVector: (name: string) => boolean;
   setVectors: (vectors: VectorData[]) => void;
 }
@@ -60,7 +60,7 @@ export const useVectorStore = create<VectorStore>((set, get) => ({
   // ----------------------------
   // UPDATE VECTOR
   // ----------------------------
-  updateVector: (name, values) => {
+  updateVector: (name, values, color) => {
     const state = get();
 
     const exists = state.vectors.some(
@@ -75,7 +75,7 @@ export const useVectorStore = create<VectorStore>((set, get) => ({
     set({
       vectors: state.vectors.map((v) =>
         v.name === name
-          ? { ...v, values }
+          ? { ...v, values, color: color ?? v.color }
           : v
       ),
     });

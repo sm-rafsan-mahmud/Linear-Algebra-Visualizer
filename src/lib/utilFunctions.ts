@@ -21,6 +21,15 @@ export function getRandomColor() {
     return (r << 16) | (g << 8) | b
 }
 
+export function getDefaultColor(): string {
+    const DEFAULT_COLORS = [
+        "#E74C3C", "#3498DB", "#2ECC71",
+        "#F1C40F", "#9B59B6", "#E67E22"
+    ]
+
+    return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
+}
+
 export function isChopped(pos: Point3D, gridSize: number) {
     if (Math.abs(pos.x) > gridSize) { return true }
     if (Math.abs(pos.y) > gridSize) { return true }

@@ -8,30 +8,30 @@ export function useVectors({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     gridSizeRef: React.RefObject<number>
     cachedFontRef: React.RefObject<Font | null>
 }) {
-    const matrixVectors = useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
+    const userVectors = useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
     const resultVectors = useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
     const resultPgrams  = usePgramSlot({ REAL_GRID_SIZE, gridSizeRef })
 
     const redrawVectors = (scene: THREE.Scene) => {
-        matrixVectors.redraw(scene)
+        userVectors.redraw(scene)
         resultVectors.redraw(scene)
         resultPgrams.redraw(scene)
     }
 
     const disposeVectors = (scene: THREE.Scene) => {
-        matrixVectors.disposeAll(scene)
+        userVectors.disposeAll(scene)
         resultVectors.disposeAll(scene)
         resultPgrams.disposeAll(scene)
     }
 
     const setVectorLabelAngles = (camera: THREE.Camera) => {
-        matrixVectors.setLabelAngles(camera)
+        userVectors.setLabelAngles(camera)
         resultVectors.setLabelAngles(camera)
     }
 
     return {
-        setMatrixVector: matrixVectors.set,
-        clearMatrixVector: matrixVectors.clear,
+        setUserVector: userVectors.set,
+        clearUserVector: userVectors.clear,
         setResultVector: resultVectors.set,
         clearResultVector: resultVectors.clear,
         setResultPgram: resultPgrams.set,

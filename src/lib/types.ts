@@ -12,6 +12,7 @@ export interface MatrixData {
 export interface VectorData {
   name: string;
   values: string[];
+  color: string;
 }
 
 export interface VariableData {
