@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
-import type { Font } from 'three/addons/loaders/FontLoader.js';
-import type { Point3D } from "./types";
+import { type Font, FontLoader } from 'three/addons/loaders/FontLoader.js'
+import type { Point3D } from "./types"
 
 export function getRandomColor() {
     const h = Math.random() * 360         // any hue
@@ -69,4 +69,15 @@ export function makeLabel(
     label.position.set(pos.x, pos.y, pos.z)
 
     return label
+}
+
+let cachedFont: Font | null = null
+
+export async function getFont(): Promise<Font> {
+    if (cachedFont) return cachedFont
+    const loader = new FontLoader()
+    cachedFont = await loader.loadAsync(
+        'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
+    )
+    return cachedFont
 }

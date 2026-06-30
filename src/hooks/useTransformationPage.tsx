@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import { getFont } from '../lib/getFont';
+import { getFont } from '../lib/utilFunctions';
 import { useVectors } from './useVectors';
 import type { Point3D } from '../lib/types';
 
