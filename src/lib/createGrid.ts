@@ -55,6 +55,12 @@ export function createGrid(
     const ratio = realSize / currSize   //ensures proper scaling
     const maxStep = (currSize - (currSize % step)) * ratio  // largest grid step 'in' the grid
 
+    const DEFAULT_MATRIX = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+    ]
+
     // boundaries: irrelevant to grid size
     points.push(-realSize, -realSize, 0, -realSize,  realSize, 0)
     points.push(-realSize, -realSize, 0,  realSize, -realSize, 0)
@@ -94,8 +100,12 @@ export function createGrid(
     const geometry = new LineSegmentsGeometry()
     geometry.setPositions(points)               // same flat format as before, just a different class
  
+    const opacity = DEFAULT_MATRIX === transform ? 0.3 : 0.95
+
     const material = new LineMaterial({
         color,
+        opacity,
+        transparent: true,
         linewidth: 2,
         resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
     })

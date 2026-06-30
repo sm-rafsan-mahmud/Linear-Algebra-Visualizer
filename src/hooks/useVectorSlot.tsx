@@ -33,8 +33,11 @@ export function useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
         })
     }
 
-    const disposeAll = (scene: THREE.Scene) => ref.current.forEach(vec => vec && disposeVector(scene, vec))
-    const setLabelAngles = (camera: THREE.Camera) => ref.current.forEach(vec => vec && vec.label.quaternion.copy(camera.quaternion))
+    const disposeAll = (scene: THREE.Scene) => 
+        ref.current.forEach(vec => vec && disposeVector(scene, vec))
+    
+    const setLabelAngles = (camera: THREE.Camera) =>
+        ref.current.forEach(vec => vec && vec.label && vec.label.quaternion.copy(camera.quaternion))
 
     return { set, clear, redraw, disposeAll, setLabelAngles }
 }

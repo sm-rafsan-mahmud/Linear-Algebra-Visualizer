@@ -25,10 +25,13 @@ export function createAxes(
     const red = 0xff0000
     const green = 0x00ff00
     const blue = 0x0000ff
+    const white = 0xffffff
+
+    size += 0.5
  
-    const xAxis = makeLine([-size, 0, 0, size, 0, 0], red, linewidth)
-    const yAxis = makeLine([0, -size, 0, 0, size, 0], green, linewidth)
-    const zAxis = makeLine([0, 0, -size, 0, 0, size], blue, linewidth)
+    const xAxis = makeLine([-size, 0, 0, size, 0, 0], white, linewidth)
+    const yAxis = makeLine([0, -size, 0, 0, size, 0], white, linewidth)
+    const zAxis = makeLine([0, 0, -size, 0, 0, size], white, linewidth)
  
     scene.add(xAxis, yAxis, zAxis)
     return {xAxis, yAxis, zAxis}

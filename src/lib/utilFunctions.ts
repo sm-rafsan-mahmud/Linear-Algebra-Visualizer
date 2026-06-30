@@ -1,3 +1,6 @@
+import * as THREE from 'three'
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
+import type { Font } from 'three/addons/loaders/FontLoader.js';
 import type { Point3D } from "./types";
 
 export function getRandomColor() {
@@ -41,4 +44,29 @@ export function isChopped(pos: Point3D, gridSize: number) {
 export function getScaledPos(pos: Point3D, realSize: number, gridSize: number): Point3D {
     const ratio = realSize / gridSize
     return { x: pos.x * ratio, y: pos.y * ratio, z: pos.z * ratio }
+}
+
+export function makeLabel(
+    text: string,
+    color: number,
+    pos: Point3D,
+    font: Font,
+    size: number
+) {
+    const geometry = new TextGeometry(text, {
+        font,
+        size,
+        depth: 0.05
+    })
+    
+    geometry.center()
+        
+    const label = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({ color })
+    )
+    
+    label.position.set(pos.x, pos.y, pos.z)
+
+    return label
 }

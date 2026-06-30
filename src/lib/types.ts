@@ -32,12 +32,12 @@ export type AxisLabelsObject = {
 }
 
 export type VectorObject = {
-    shaft: Line2
-    head:  THREE.Mesh
+    shaft: Line2 | null
+    head:  THREE.Mesh | null
     pos:   Point3D,
     color: number,
     name: string,
-    label: THREE.Mesh
+    label: THREE.Mesh | null
 }
 
 export type PgramObject = {

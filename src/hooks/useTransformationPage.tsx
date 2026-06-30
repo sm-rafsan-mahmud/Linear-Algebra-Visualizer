@@ -162,14 +162,15 @@ export function useTransformationPage() {
 
         controlsRef.current = new OrbitControls(perspCamera, renderer.domElement)
         controlsRef.current.enableZoom = false
+        controlsRef.current.enablePan = false
 
-        const transform = [
-            [1, 2, 0],
-            [3, 1, 0],
-            [0, 0, 1]
-        ]
+        // const transform = [
+        //     [1, 2, 0],
+        //     [3, 1, 0],
+        //     [0, 0, 1]
+        // ]
 
-        drawTransformGrid(scene, transform)
+        // drawTransformGrid(scene, transform)
 
         async function loadFont() {
             const font = await getFont()

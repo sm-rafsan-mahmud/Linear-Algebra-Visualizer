@@ -15,7 +15,7 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
 }) {
     // grid variables
     const MINOR_COLOR = 0xaaaaaa
-    const MAJOR_COLOR = 0xffffff
+    const MAJOR_COLOR = 0xdddddd
     const MIN_GRID_SIZE    = 1e-4
     const MAX_GRID_SIZE    = 1e5
     const ZOOM_FACTOR      = 1.1
