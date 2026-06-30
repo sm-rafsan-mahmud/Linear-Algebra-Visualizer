@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import VBox from "../components/VBox";
-import { useTransformationPage } from "../hooks/useTransformationPage";
+import { useTransformationPage } from "../hooks/3d-vectors/useTransformationPage";
 import type { RowData, MatrixData, VectorData } from "../lib/types";
 import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";

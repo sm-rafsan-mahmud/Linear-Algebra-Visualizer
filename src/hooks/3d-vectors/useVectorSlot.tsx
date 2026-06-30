@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { useRef } from 'react'
-import type { VectorObject } from '../lib/types'
-import { createVector, disposeVector } from '../lib/createVector'
+import type { VectorObject } from '../../lib/types'
+import { createVector, disposeVector } from '../../lib/3d-vectors/createVector'
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 
 export function useVectorSlot({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {

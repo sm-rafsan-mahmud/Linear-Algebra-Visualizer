@@ -3,8 +3,8 @@ import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import type { Point3D, VectorObject } from './types'
-import { getScaledPos, isChopped, makeLabel } from './utilFunctions'
+import type { Point3D, VectorObject } from '../types'
+import { getScaledPos, isChopped, makeLabel } from '../utilFunctions'
 
 const HEAD_RADIUS  = 0.21
 const HEAD_LENGTH  = 0.35          // world units, not a proportion of vector length

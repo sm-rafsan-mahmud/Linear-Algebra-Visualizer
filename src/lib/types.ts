@@ -4,6 +4,9 @@ import { Line2 } from 'three/addons/lines/Line2.js'
 export type Page = 'home' | 'transformations'
 export type Point3D = { x: number, y: number, z: number }
 
+export type ShapesPageState = 'idle' | 'placing' | 'transforming'
+export type Point2D = {x: number, y: number}
+
 export interface MatrixData {
   name: string;
   values: string[][];

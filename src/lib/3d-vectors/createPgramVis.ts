@@ -2,8 +2,8 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import type { Point3D, PgramObject } from "./types";
-import { getScaledPos, isChopped } from './utilFunctions';
+import type { Point3D, PgramObject } from "../types";
+import { getScaledPos, isChopped } from '../utilFunctions';
 
 function chopAndScale(pos: Point3D, realSize: number, gridSize: number): Point3D {
     if (Math.abs(pos.x) > gridSize || Math.abs(pos.y) > gridSize || Math.abs(pos.z) > gridSize) {
