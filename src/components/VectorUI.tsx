@@ -52,7 +52,6 @@ export default function VectorUI({
               flexShrink: 0,
             }} />
           )}
-          <strong>{vector.name}</strong>
         </div>
 
         {/* Resize controls */}

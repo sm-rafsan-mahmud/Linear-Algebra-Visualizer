@@ -9,7 +9,7 @@ interface VectorProps {
 
 export default function Vector({ values, setValues, onResize }: VectorProps) {
   return (
-    <div style={{ position: "relative", display: "inline-flex", gap: 4, marginTop: 8 }}>
+    <div style={{ position: "relative", display: "inline-flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
       {values.map((cell, i) => (
         <input
           key={i}
@@ -28,10 +28,12 @@ export default function Vector({ values, setValues, onResize }: VectorProps) {
             padding: "4px 0",
             fontFamily: "monospace",
           }}
+          onFocus={(e) => (e.target.style.borderBottomColor = "#38bdf8")}
+          onBlur={(e) => (e.target.style.borderBottomColor = "#334155")}
         />
       ))}
 
-      <ResizeHandle axis="col" onResize={(_deltaRows, deltaCols) => onResize(deltaCols)} />
+      <ResizeHandle axis="row" onResize={(deltaRows) => onResize(deltaRows)} />
     </div>
   );
 }

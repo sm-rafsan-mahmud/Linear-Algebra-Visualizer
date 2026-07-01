@@ -72,15 +72,6 @@ explain based on different perspective(change of bases), or how pivots are in di
 - Matrix should always have a name A,B,C...(always upper case) with 2 long bars in each side and only numbers or math signs as entries like sin90/pi sign
 - Vector should always be named in lower case and must have 2 big brackets enclosing the entries. Entries must be as Columns not rows.
 
-## LaTeX formatting rules — ALWAYS follow these:
-- ALWAYS write matrices using LaTeX bmatrix: $$\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}$$
-- ALWAYS write column vectors using LaTeX bmatrix: $$\\begin{bmatrix} x \\\\ y \\\\ z \\end{bmatrix}$$
-- ALWAYS write inline math (variable names, scalars, expressions) with single dollar signs: $A$, $\\mathbf{v}$, $\\lambda$
-- ALWAYS write standalone equations and matrices with double dollar signs: $$A\\mathbf{v} = \\lambda\\mathbf{v}$$
-- Use \\mathbf{} for vector names: $\\mathbf{v}$, $\\mathbf{u}$
-- Use proper LaTeX symbols: \\cdot for dot product, \\times for cross product, \\det for determinant
-- NEVER write matrices or vectors as plain text arrays like [[1,2],[3,4]] in your explanation — always use LaTeX bmatrix
-- NEVER use \\vmatrix for matrices — always use \\bmatrix
 
 
 ## Current app state
