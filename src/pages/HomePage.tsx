@@ -1,36 +1,19 @@
+import { useState } from "react";
+import type { Page } from "../lib/types";
+import TransformationPage from "./TransformationPage";
+import ShapesPage from "./ShapesPage";
 
-// import FeatureCard from '../components/FeatureCard'
-// import transformImg from '../assets/transform.jpeg'
-// import quizImg from '.,/assets/quizImg.png'
+export default function HomePage() {
+    const [page, setPage] = useState<Page>("transformations")
 
-
-
-// export default function HomePage() {
-//   return (
-//     <div>
-
-//       <div className="header">
-//         <h1>Linear Algebra Visualizer</h1>
-//       </div>
-
-//       <div className="card-container">
-//         {/* <FeatureCard
-//           img={transformImg}
-//           alt="Transformation"
-//           name="Transformations"
-//           description="Visualize transformations"
-//         /> */}
-
-
-//         <FeatureCard
-//           img={quizImg}
-//           alt="Quiz"
-//           name="Quiz"
-//           description="Practice concepts interactively"
-//         />
-
-//       </div>
-
-//     </div>
-//   );
-// }
+    return (
+        <>
+            {page === "transformations"
+                ? <TransformationPage swapPage={(nextPage) => {
+                    console.log("setting page: " + nextPage)
+                    setPage(nextPage)
+                }} />
+                : <ShapesPage swapPage={(page) => setPage(page)}/>}
+        </>
+    );
+}

@@ -60,9 +60,12 @@ export function applyReflection(points: Point2D[], rfX: boolean, rfY: boolean) {
 
     } else y = 1
 
+    // x and y seem backwards here because taking -1 * x is really
+    // a reflection over the y axis: y values stay constant and
+    // x values switch parity.
     const matrix = mathjs.matrix([
-        [x, 0],
-        [0, y]
+        [y, 0],
+        [0, x]
     ])
 
     return points.map(({x, y}) => {

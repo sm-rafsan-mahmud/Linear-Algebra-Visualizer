@@ -51,7 +51,7 @@ export function useShapesPage() {
         scene.background = new THREE.Color(0xffffff)
         sceneRef.current = scene
         
-        const aspect = mount.clientWidth / mount.clientHeight
+        const aspect = mount.clientHeight > 0 ? mount.clientWidth / mount.clientHeight : 1
         const frustumSize = 20
         const camera = new THREE.OrthographicCamera(
             (-frustumSize * aspect) / 2, // left
@@ -65,7 +65,7 @@ export function useShapesPage() {
         cameraRef.current = camera
 
         const handleResize = () => {
-            const aspect = mount.clientWidth / mount.clientHeight
+            const aspect = mount.clientHeight > 0 ? mount.clientWidth / mount.clientHeight : 1
             camera.left = (-frustumSize * aspect) / 2
             camera.right = (frustumSize * aspect) / 2
             camera.top = frustumSize / 2

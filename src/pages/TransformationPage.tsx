@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import VBox from "../components/VBox";
 import { useTransformationPage } from "../hooks/3d-vectors/useTransformationPage";
-import type { RowData, MatrixData, VectorData } from "../lib/types";
+import type { Page, RowData, MatrixData, VectorData } from "../lib/types";
 import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";
 import VectorParser from "../utils/VectorParser";
@@ -29,7 +29,11 @@ export function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   return scope;
 }
 
-export default function TransformationPage() {
+interface TransformationPageProps {
+  swapPage: (nextPage: Page) => void
+}
+
+export default function TransformationPage({ swapPage }: TransformationPageProps) {
   const {
     mountRef,
     setCameraPosition,
@@ -130,7 +134,10 @@ export default function TransformationPage() {
             minHeight: 0,
           }}
         >
-          <h2 style={{ margin: 0 }}>Linear Algebra Visualizer</h2>
+          <div>
+            <h2 style={{ margin: 0 }}>Linear Algebra Visualizer</h2>
+            <button type="button" onClick={() => swapPage('shapes')}>Shapes</button>
+          </div>
 
           <button onClick={addNewBox}>Add Formula Box</button>
 

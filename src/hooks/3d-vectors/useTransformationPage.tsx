@@ -228,17 +228,17 @@ export function useTransformationPage() {
         return () => {
             cancelled = true
             cancelAnimationFrame(animationId)
-            if(controlsRef.current) {
-                controlsRef.current.dispose()
+            try {
+                controlsRef.current?.dispose()
+                resizeObserver.disconnect()
+                disposeAllGridObjects(scene)
+                disposeVectors(scene)
+                mount.removeEventListener('wheel', handleWheel)
+                renderer.dispose()
+                mount.removeChild(renderer.domElement)
+            } catch (err) {
+                console.error("Cleanup error:", err)
             }
-            resizeObserver.disconnect()
-
-            disposeAllGridObjects(scene)
-            disposeVectors(scene)
-            mount.removeEventListener('wheel', handleWheel)
-
-            renderer.dispose()
-            mount.removeChild(renderer.domElement)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
