@@ -2,10 +2,6 @@ import { useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { MatrixData, Point2D, TransformationData, TransformationType } from '../../lib/types'
 import {
-    buildTranslationMatrix,
-    buildDilationMatrix,
-    buildRotationMatrix,
-    buildReflectionMatrix,
     applyMatrixChain,
     parseMatrixValues
 } from '../../lib/2d-shapes/applyTransform'
@@ -36,7 +32,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     const [applyError, setApplyError] = useState<string | null>(null)
 
     const addMatrix = (label: string, m: number[][]) => {
-        setMatrices(prev => [...prev, toMatrixData(`${prev.length + 1}. ${label}`, m)])
+        setMatrices(prev => [...prev, toMatrixData(`${label}`, m)])
     }
 
     // called by usePlaceShape via onShapeConfirmed
@@ -50,22 +46,22 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     // longer touches the shape -- it only appears in the editable matrix
     // list until the user hits Apply.
     const handleTransform = (type: TransformationType, data: TransformationData) => {
-        switch (type) {
-            case 'translation':
-                // assert that tx and ty exist because in this case they should
-                // temporary anyways while I refactor.
-                addMatrix('Translation', buildTranslationMatrix(data.tx!, data.ty!))
-                break
-            case 'dilation':
-                addMatrix('Dilation', buildDilationMatrix(data.k!))
-                break
-            case 'rotation':
-                addMatrix('Rotation', buildRotationMatrix(data.t!))
-                break
-            case 'reflection':
-                addMatrix('Reflection', buildReflectionMatrix(data.rfX!, data.rfY!))
-                break
-        }
+        // switch (type) {
+        //     case 'translation':
+        //         // assert that tx and ty exist because in this case they should
+        //         // temporary anyways while I refactor.
+        //         addMatrix('Translation', buildTranslationMatrix(data.tx!, data.ty!))
+        //         break
+        //     case 'dilation':
+        //         addMatrix('Dilation', buildDilationMatrix(data.k!))
+        //         break
+        //     case 'rotation':
+        //         addMatrix('Rotation', buildRotationMatrix(data.t!))
+        //         break
+        //     case 'reflection':
+        //         addMatrix('Reflection', buildReflectionMatrix(data.rfX!, data.rfY!))
+        //         break
+        // }
     }
 
     const handleMatrixEdit = (name: string, values: string[][]) => {
@@ -110,6 +106,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
 
     return {
         initShape,
+        addMatrix,
         handleTransform,
         handleApplyMatrices,
         handleReset,

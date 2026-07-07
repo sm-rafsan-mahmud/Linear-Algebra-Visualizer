@@ -6,9 +6,12 @@ export type Point3D = { x: number, y: number, z: number }
 
 export type ShapesPageState = 'idle' | 'placing' | 'transforming'
 export type TransformationType
-    = 'translation'
+    = 'identity'
+    | 'translation'
     | 'dilation'
     | 'rotation'
+    | 'shear'
+    | 'squeeze'
     | 'reflection'
 // I think this one is temporary for the refactor
 export type TransformationData = {

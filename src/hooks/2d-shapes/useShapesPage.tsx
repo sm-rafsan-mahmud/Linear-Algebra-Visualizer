@@ -16,6 +16,7 @@ export function useShapesPage() {
 
     const {
         initShape,
+        addMatrix,
         handleTransform,
         handleApplyMatrices,
         handleReset,
@@ -123,6 +124,7 @@ export function useShapesPage() {
         pointCount,
         handleTogglePlacing,
         handleCancelPlacing,
+        addMatrix,
         handleTransform,
         handleApplyMatrices,
         handleReset,

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import AddShape from '../components/2d-shapes/AddShape'
 import CancelShape from '../components/2d-shapes/CancelShape'
-import TransformControls from '../components/2d-shapes/TransformControls'
 import TransformMatrixUI from '../components/2d-shapes/TransformMatrixUI'
 import { useShapesPage } from '../hooks/2d-shapes/useShapesPage'
-import type { Page } from '../lib/types'
+import type { Page, TransformationType } from '../lib/types'
+import AddTransform from '../components/2d-shapes/AddTransform'
+import * as buildMatrix from '../lib/2d-shapes/buildMatrices'
 
 interface ShapesPageProps {
   swapPage: (page: Page) => void
@@ -16,6 +17,7 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     pointCount,
     handleTogglePlacing,
     handleCancelPlacing,
+    addMatrix,
     handleTransform,
     handleApplyMatrices,
     handleReset,
@@ -32,6 +34,33 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     if (demoState === 'idle') return 'Add Shape'
     if (demoState === 'placing') return pointCount < 3 ? 'Select Points' : 'Confirm Shape'
     return ''
+  }
+
+  const addTransformation = (type: TransformationType) => {
+    const label = (matrices.length + 1) + '.'
+
+    switch (type) {
+      case 'identity':
+        addMatrix(label, buildMatrix.identity(2))
+        break
+      case 'translation':
+        addMatrix(label, buildMatrix.translation(1, 2))
+        break
+      case 'dilation':
+        addMatrix(label, buildMatrix.dilation(2))
+        break
+      case 'rotation':
+        addMatrix(label, buildMatrix.rotation(Math.PI / 4))
+        break
+      case 'shear':
+        addMatrix(label, buildMatrix.shear(2, 0))
+        break
+      case 'squeeze':
+        addMatrix(label, buildMatrix.squeeze(2, 0.5))
+        break
+      case 'reflection':
+        addMatrix(label, buildMatrix.reflection(true, false))
+    }
   }
 
   return (
@@ -76,11 +105,6 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
           {/* DEFAULT CONTROLS -- TEMP. */}
           {demoState != 'transforming' && <AddShape onClick={handleTogglePlacing} label={labelFromState()} />}
           {demoState == 'placing' && <CancelShape onClick={handleCancelPlacing} />}
-          {demoState == 'transforming' && <TransformControls 
-            onTransform={handleTransform}
-            onReset={handleReset}
-            onNewShape={handleNewShape}
-          />}
 
           {/* SHOW MATRIX */}
           {matrices.map((matrix) => (
@@ -108,6 +132,12 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
 
         </div>
 
+        {/* CONTROLS */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <AddTransform onSelect={addTransformation}/>
+          <button>Edit Transformations</button>
+          <button>New Shape</button>
+        </div>
       </div>
 
       {/* CANVAS */}
