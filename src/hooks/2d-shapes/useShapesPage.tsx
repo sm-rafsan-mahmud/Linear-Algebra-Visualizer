@@ -1,4 +1,3 @@
-'use client'
 import { useEffect, useRef, useState} from 'react'
 import * as THREE from 'three'
 import { usePlaceShape } from './usePlaceShape'
@@ -17,12 +16,13 @@ export function useShapesPage() {
 
     const {
         initShape,
-        handleTranslate,
-        handleDilate,
-        handleRotate,
-        handleReflect,
+        handleTransform,
+        handleApplyMatrices,
         handleReset,
-        handleNewShape
+        handleNewShape,
+        matrices,
+        handleMatrixEdit,
+        applyError
     } = useTransformShape({
         sceneRef,
         setDemoState,
@@ -97,10 +97,24 @@ export function useShapesPage() {
         return () => {
             cancelAnimationFrame(animFrameID)
             window.removeEventListener('resize', handleResize)
-            cleanupCanvasHandlers
+            cleanupCanvasHandlers()
+            scene.remove(gridObjects)
+            gridObjects.geometry.dispose();
+            (gridObjects.material as THREE.Material).dispose()
+            scene.remove(majorGridObjects)
+            majorGridObjects.geometry.dispose();
+            (majorGridObjects.material as THREE.Material).dispose()
+            scene.remove(axes.xAxis, axes.yAxis)
+            axes.xAxis.geometry.dispose();
+            (axes.xAxis.material as THREE.Material).dispose()
+            axes.yAxis.geometry.dispose();
+            (axes.yAxis.material as THREE.Material).dispose()
+
             mount.removeChild(renderer.domElement)
             renderer.dispose()
         }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return {
@@ -109,11 +123,12 @@ export function useShapesPage() {
         pointCount,
         handleTogglePlacing,
         handleCancelPlacing,
-        handleTranslate,
-        handleDilate,
-        handleRotate,
-        handleReflect,
+        handleTransform,
+        handleApplyMatrices,
         handleReset,
-        handleNewShape
+        handleNewShape,
+        matrices,
+        handleMatrixEdit,
+        applyError
     }
 }

@@ -10,6 +10,15 @@ export type TransformationType
     | 'dilation'
     | 'rotation'
     | 'reflection'
+// I think this one is temporary for the refactor
+export type TransformationData = {
+    tx?: number,
+    ty?: number,
+    k?: number,
+    t?: number,
+    rfX?: boolean,
+    rfY?: boolean
+}
 export type Point2D = {x: number, y: number}
 
 export interface MatrixData {

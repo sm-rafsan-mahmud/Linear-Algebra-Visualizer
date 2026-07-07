@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import ApplyOrCancel from './ApplyOrCancel'
+import type { TransformationData, TransformationType } from '../../lib/types'
 
 interface TransformControlsProps {
-    onTranslate: (tx: number, ty: number) => void,
-    onDilate: (k: number) => void,
-    onRotate: (t: number) => void,
-    onReflect: (rfX: boolean, rfY: boolean) => void,
+    onTransform: (type: TransformationType, data: TransformationData) => void,
     onReset: () => void,
     onNewShape: () => void
 }
 
-export default function TransformControls({ onTranslate, onDilate, onRotate, onReflect, onReset, onNewShape }: TransformControlsProps) {
+export default function TransformControls({ onTransform, onReset, onNewShape }: TransformControlsProps) {
     const [activeTransform, setActiveTransform] = useState<string | null>(null)
     const [txInput, setTxInput] = useState('0')
     const [tyInput, setTyInput] = useState('0')
@@ -23,7 +21,7 @@ export default function TransformControls({ onTranslate, onDilate, onRotate, onR
         const tx = parseFloat(txInput)
         const ty = parseFloat(tyInput)
         if (isNaN(tx) || isNaN(ty)) return
-        onTranslate(tx, ty)
+        onTransform('translation', { tx, ty })
         setActiveTransform(null)
         setTxInput('0')
         setTyInput('0')
@@ -32,7 +30,7 @@ export default function TransformControls({ onTranslate, onDilate, onRotate, onR
     const handleDilate = () => {
         const k = parseFloat(kInput)
         if (isNaN(k)) return
-        onDilate(k)
+        onTransform('dilation', { k })
         setActiveTransform(null)
         setKInput('0')
     }
@@ -40,13 +38,13 @@ export default function TransformControls({ onTranslate, onDilate, onRotate, onR
     const handleRotate = () => {
         const t = parseFloat(tInput)
         if (isNaN(t)) return
-        onRotate(t)
+        onTransform('rotation', { t })
         setActiveTransform(null)
         setTInput('0')
     }
 
     const handleReflect = () => {
-        onReflect(rfX, rfY)
+        onTransform('reflection', { rfX, rfY })
         setActiveTransform(null)
         setRfX(false)
         setRfY(false)

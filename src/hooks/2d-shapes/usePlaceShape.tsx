@@ -109,6 +109,11 @@ export function usePlaceShape({ sceneRef, stateRef, setDemoState, onShapeConfirm
 
         mount.addEventListener('mousemove', handleMouseMove)
         mount.addEventListener('click', handleCanvasClick)
+
+        return () => {
+            mount.removeEventListener('mousemove', handleMouseMove)
+            mount.removeEventListener('click', handleCanvasClick)
+        }
     }
 
     return {

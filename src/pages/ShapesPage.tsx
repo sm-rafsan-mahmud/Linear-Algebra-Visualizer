@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import AddShape from '../components/2d-shapes/AddShape'
 import CancelShape from '../components/2d-shapes/CancelShape'
 import TransformControls from '../components/2d-shapes/TransformControls'
+import TransformMatrixUI from '../components/2d-shapes/TransformMatrixUI'
 import { useShapesPage } from '../hooks/2d-shapes/useShapesPage'
 import type { Page } from '../lib/types'
 
@@ -14,16 +16,18 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     pointCount,
     handleTogglePlacing,
     handleCancelPlacing,
-    handleTranslate,
-    handleDilate,
-    handleRotate,
-    handleReflect,
+    handleTransform,
+    handleApplyMatrices,
     handleReset,
     handleNewShape,
+    matrices,
+    handleMatrixEdit,
+    applyError,
     mountRef
   } = useShapesPage()
 
-    
+  const [selectedMatrixName, setSelectedMatrixName] = useState<string | null>(null)
+
   const labelFromState = () => {
     if (demoState === 'idle') return 'Add Shape'
     if (demoState === 'placing') return pointCount < 3 ? 'Select Points' : 'Confirm Shape'
@@ -69,16 +73,39 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
             minHeight: 0
           }}
         >
+          {/* DEFAULT CONTROLS -- TEMP. */}
           {demoState != 'transforming' && <AddShape onClick={handleTogglePlacing} label={labelFromState()} />}
           {demoState == 'placing' && <CancelShape onClick={handleCancelPlacing} />}
           {demoState == 'transforming' && <TransformControls 
-            onTranslate={handleTranslate}
-            onDilate={handleDilate}
-            onRotate={handleRotate}
-            onReflect={handleReflect}
+            onTransform={handleTransform}
             onReset={handleReset}
             onNewShape={handleNewShape}
           />}
+
+          {/* SHOW MATRIX */}
+          {matrices.map((matrix) => (
+            <TransformMatrixUI
+              key={matrix.name}
+              matrix={matrix}
+              onChange={handleMatrixEdit}
+              selectedName={selectedMatrixName}
+              setSelectedName={setSelectedMatrixName}
+            />
+          ))}
+
+          {matrices.length > 0 && (
+            <div>
+              <button onClick={handleApplyMatrices}>
+                Apply Transforms
+              </button>
+              {applyError && (
+                <p style={{ color: '#f87171', fontSize: '0.875rem', marginTop: 8 }}>
+                  {applyError}
+                </p>
+              )}
+            </div>
+          )}
+
         </div>
 
       </div>
