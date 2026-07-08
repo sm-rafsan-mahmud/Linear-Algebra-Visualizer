@@ -20,7 +20,7 @@ export default function TransformMatrix({ values, setValues }: TransformMatrixPr
                   setValues(r, c, e.target.value)
                 }
                 style={{
-                  width: 50,
+                  width: 100,
                   textAlign: "center",
                   background: "#1e293b",
                   border: "1px solid #334155",

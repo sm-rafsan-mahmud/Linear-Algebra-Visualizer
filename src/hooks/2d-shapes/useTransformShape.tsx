@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import * as THREE from 'three'
-import type { MatrixData, Point2D, TransformationData, TransformationType } from '../../lib/types'
+import type { MatrixData, Point2D } from '../../lib/types'
 import {
     applyMatrixChain,
     parseMatrixValues
@@ -11,13 +11,6 @@ interface UseTransformShapeProps {
     sceneRef: React.RefObject<THREE.Scene | null>
     setDemoState: (state: string) => void
     stateRef: React.RefObject<string>
-}
-
-function toMatrixData(name: string, m: number[][]): MatrixData {
-    return {
-        name,
-        values: m.map(row => row.map(v => (Number.isInteger(v) ? v.toString() : v.toFixed(2))))
-    }
 }
 
 export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTransformShapeProps) {
@@ -31,37 +24,26 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     const [matrices, setMatrices] = useState<MatrixData[]>([])
     const [applyError, setApplyError] = useState<string | null>(null)
 
-    const addMatrix = (label: string, m: number[][]) => {
-        setMatrices(prev => [...prev, toMatrixData(`${label}`, m)])
+    const addMatrix = (name: string, values: string[][]) => {
+        setMatrices(prev => [...prev, {name, values}])
     }
+
+    // Reorders the staged matrix list. handleApplyMatrices will replay
+    // the chain in this new order next time it's called.
+    const reorderMatrices = useCallback((oldIndex: number, newIndex: number) => {
+        setMatrices(prev => {
+            const next = [...prev]
+            const [moved] = next.splice(oldIndex, 1)
+            next.splice(newIndex, 0, moved)
+            return next
+        })
+    }, [])
 
     // called by usePlaceShape via onShapeConfirmed
     const initShape = (mesh: THREE.Mesh, points: Point2D[]) => {
         shapeMeshRef.current = mesh
         originalPointsRef.current = [...points]
         currentPointsRef.current = [...points]
-    }
-
-    // Presets: build a matrix from the typed inputs and queue it up. This no
-    // longer touches the shape -- it only appears in the editable matrix
-    // list until the user hits Apply.
-    const handleTransform = (type: TransformationType, data: TransformationData) => {
-        // switch (type) {
-        //     case 'translation':
-        //         // assert that tx and ty exist because in this case they should
-        //         // temporary anyways while I refactor.
-        //         addMatrix('Translation', buildTranslationMatrix(data.tx!, data.ty!))
-        //         break
-        //     case 'dilation':
-        //         addMatrix('Dilation', buildDilationMatrix(data.k!))
-        //         break
-        //     case 'rotation':
-        //         addMatrix('Rotation', buildRotationMatrix(data.t!))
-        //         break
-        //     case 'reflection':
-        //         addMatrix('Reflection', buildReflectionMatrix(data.rfX!, data.rfY!))
-        //         break
-        // }
     }
 
     const handleMatrixEdit = (name: string, values: string[][]) => {
@@ -84,13 +66,6 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
         }
     }
 
-    const handleReset = () => {
-        currentPointsRef.current = [...originalPointsRef.current]
-        updateShapeMesh(shapeMeshRef.current!, currentPointsRef.current)
-        setMatrices([])
-        setApplyError(null)
-    }
-
     const handleNewShape = () => {
         if (shapeMeshRef.current) {
             sceneRef.current!.remove(shapeMeshRef.current)
@@ -107,9 +82,8 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     return {
         initShape,
         addMatrix,
-        handleTransform,
+        reorderMatrices,
         handleApplyMatrices,
-        handleReset,
         handleNewShape,
         matrices,
         handleMatrixEdit,

@@ -1,11 +1,18 @@
 import { useState } from 'react'
-import AddShape from '../components/2d-shapes/AddShape'
-import CancelShape from '../components/2d-shapes/CancelShape'
-import TransformMatrixUI from '../components/2d-shapes/TransformMatrixUI'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import SortableMatrixItem from '../components/2d-shapes/SortableMatrixItem'
 import { useShapesPage } from '../hooks/2d-shapes/useShapesPage'
-import type { Page, TransformationType } from '../lib/types'
-import AddTransform from '../components/2d-shapes/AddTransform'
+import type { Page, ShapesPageState, TransformationType } from '../lib/types'
 import * as buildMatrix from '../lib/2d-shapes/buildMatrices'
+import ShapeManager from '../components/2d-shapes/ShapeManager'
 
 interface ShapesPageProps {
   swapPage: (page: Page) => void
@@ -18,9 +25,8 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     handleTogglePlacing,
     handleCancelPlacing,
     addMatrix,
-    handleTransform,
+    reorderMatrices,
     handleApplyMatrices,
-    handleReset,
     handleNewShape,
     matrices,
     handleMatrixEdit,
@@ -30,38 +36,44 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
 
   const [selectedMatrixName, setSelectedMatrixName] = useState<string | null>(null)
 
-  const labelFromState = () => {
-    if (demoState === 'idle') return 'Add Shape'
-    if (demoState === 'placing') return pointCount < 3 ? 'Select Points' : 'Confirm Shape'
-    return ''
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 4 }, // avoid hijacking clicks that select/edit a matrix
+    })
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = matrices.findIndex((m) => m.name === active.id)
+    const newIndex = matrices.findIndex((m) => m.name === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    reorderMatrices(oldIndex, newIndex)
   }
 
-  const addTransformation = (type: TransformationType) => {
-    const label = (matrices.length + 1) + '.'
-
-    switch (type) {
-      case 'identity':
-        addMatrix(label, buildMatrix.identity(2))
-        break
-      case 'translation':
-        addMatrix(label, buildMatrix.translation(1, 2))
-        break
-      case 'dilation':
-        addMatrix(label, buildMatrix.dilation(2))
-        break
-      case 'rotation':
-        addMatrix(label, buildMatrix.rotation(Math.PI / 4))
-        break
-      case 'shear':
-        addMatrix(label, buildMatrix.shear(2, 0))
-        break
-      case 'squeeze':
-        addMatrix(label, buildMatrix.squeeze(2, 0.5))
-        break
-      case 'reflection':
-        addMatrix(label, buildMatrix.reflection(true, false))
-    }
+  const setTemplate = (name: string, type: TransformationType) => {
+  switch (type) {
+    case 'translation':
+      handleMatrixEdit(name, buildMatrix.translation(1, 2))
+      break
+    case 'dilation':
+      handleMatrixEdit(name, buildMatrix.dilation(2))
+      break
+    case 'rotation':
+      handleMatrixEdit(name, buildMatrix.rotation(45))
+      break
+    case 'shear':
+      handleMatrixEdit(name, buildMatrix.shear(2, 0))
+      break
+    case 'squeeze':
+      handleMatrixEdit(name, buildMatrix.squeeze(2, 0.5))
+      break
+    case 'reflection':
+      handleMatrixEdit(name, buildMatrix.reflection(true, false))
   }
+}
 
   return (
     <div style={{display: "flex", height: "100vh", width: "100wv"}}>
@@ -90,6 +102,20 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
           <button onClick={() => swapPage('transformations')}>Vectors</button>
         </div>
 
+        
+        {/* CONTROLS */}
+        <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+          <ShapeManager
+            state={demoState as ShapesPageState} 
+            pointCount={pointCount} 
+            onAdd={handleTogglePlacing}
+            onCancel={handleCancelPlacing}
+            onNew={handleNewShape}  
+          />
+          <button style={{ width: "100%" }}>Edit Transformations</button>
+          <button style={{ width: "100%" }} onClick={() => addMatrix((matrices.length + 1) + '.', buildMatrix.identity(2))}>Add Transformation</button>
+        </div>
+
         {/* SCROLLABLE CONTENT */}
         <div
           style={{
@@ -102,20 +128,20 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
             minHeight: 0
           }}
         >
-          {/* DEFAULT CONTROLS -- TEMP. */}
-          {demoState != 'transforming' && <AddShape onClick={handleTogglePlacing} label={labelFromState()} />}
-          {demoState == 'placing' && <CancelShape onClick={handleCancelPlacing} />}
-
-          {/* SHOW MATRIX */}
-          {matrices.map((matrix) => (
-            <TransformMatrixUI
-              key={matrix.name}
-              matrix={matrix}
-              onChange={handleMatrixEdit}
-              selectedName={selectedMatrixName}
-              setSelectedName={setSelectedMatrixName}
-            />
-          ))}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={matrices.map((m) => m.name)} strategy={verticalListSortingStrategy}>
+              {matrices.map((matrix) => (
+                <SortableMatrixItem
+                  key={matrix.name}
+                  matrix={matrix}
+                  onChange={handleMatrixEdit}
+                  selectedName={selectedMatrixName}
+                  setSelectedName={setSelectedMatrixName}
+                  newTemplate={(type) => setTemplate(matrix.name, type)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
           {matrices.length > 0 && (
             <div>
@@ -129,14 +155,6 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
               )}
             </div>
           )}
-
-        </div>
-
-        {/* CONTROLS */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <AddTransform onSelect={addTransformation}/>
-          <button>Edit Transformations</button>
-          <button>New Shape</button>
         </div>
       </div>
 

@@ -1,35 +1,30 @@
 import { useState } from "react"
 import type { TransformationType } from "../../lib/types"
 
-interface AddTransformProps {
+interface SelectTemplateProps {
     onSelect: (type: TransformationType) => void
 }
 
-export default function AddTransform({ onSelect }: AddTransformProps) {
+export default function SelectTemplate({ onSelect }: SelectTemplateProps) {
     const [open, setOpen] = useState<boolean>(false)
 
     return (
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={{ position: "relative", display: "inline-block", width: 150, marginLeft: 12, marginRight: "auto" }}>
             {/* Main button — triggers dropdown on click. */}
-            <button onClick={() => setOpen(prev => !prev)}>
-                Add New Transformation
+            <button style={{ width: "100%" }} onClick={() => setOpen(prev => !prev)}>
+                Choose a Template
             </button>
 
             {/* Dropdown — renders when open */}
             {open && (
                 <div style={{
-                    position: "absolute",
-                    bottom: "calc(100% + 6px)",
-                    left: 0,
-                    background: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: 8,
-                    padding: "4px",
-                    zIndex: 50,
-                    display: "grid",
-                    gridTemplateColumns: "1fr"
+                    position: "absolute", top: "calc(100% + 6px)",
+                    left: "50%", transform: "translateX(-50%)", 
+                    width: 110, background: "#1e293b",
+                    border: "1px solid #334155", borderRadius: 8,
+                    padding: "4px", zIndex: 50,
+                    display: "grid", gridTemplateColumns: "1fr"
                 }}>
-                    <button onClick={() => { onSelect('identity'); setOpen(false); }} style={{ width: "100%" }}>Default</button>
                     <button onClick={() => { onSelect('translation'); setOpen(false); }} style={{ width: "100%" }}>Translate</button>
                     <button onClick={() => { onSelect('dilation'); setOpen(false); }} style={{ width: "100%" }}>Dilate</button>
                     <button onClick={() => { onSelect('rotation'); setOpen(false); }} style={{ width: "100%" }}>Rotate</button>

@@ -1,18 +1,23 @@
 import TransformMatrix from "./TransformMatrix";
-import type { MatrixData } from "../../lib/types";
+import type { MatrixData, TransformationType } from "../../lib/types";
 import resizeMatrixValues from "../../utils/ResizeMatrix";
+import SelectTemplate from "./SelectTemplate";
+
+interface TransformMatrixUIProps {
+  matrix: MatrixData;
+  onChange: (name: string, values: string[][]) => void;
+  selectedName: string | null;
+  setSelectedName: (name: string) => void;
+  newTemplate: (type: TransformationType) => void;
+}
 
 export default function TransformMatrixUI({
   matrix,
   onChange,
   selectedName,
   setSelectedName,
-}: {
-  matrix: MatrixData;
-  onChange: (name: string, values: string[][]) => void;
-  selectedName: string | null;
-  setSelectedName: (name: string) => void;
-}) {
+  newTemplate
+}: TransformMatrixUIProps) {
   const rows = matrix.values.length;
   const cols = matrix.values[0]?.length ?? 0;
 
@@ -44,6 +49,8 @@ export default function TransformMatrixUI({
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <strong>{matrix.name}</strong>
+
+        <SelectTemplate onSelect={newTemplate}/>
 
         <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
           {/* Row controls */}
