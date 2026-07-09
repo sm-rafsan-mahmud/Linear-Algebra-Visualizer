@@ -23,7 +23,8 @@ export function useShapesPage() {
         handleNewShape,
         matrices,
         handleMatrixEdit,
-        applyError
+        applyError,
+        disposeWireframes
     } = useTransformShape({
         sceneRef,
         setDemoState,
@@ -149,6 +150,8 @@ export function useShapesPage() {
             (axes.xAxis.material as THREE.Material).dispose()
             axes.yAxis.geometry.dispose();
             (axes.yAxis.material as THREE.Material).dispose()
+
+            disposeWireframes()
 
             mount.removeChild(renderer.domElement)
             renderer.dispose()

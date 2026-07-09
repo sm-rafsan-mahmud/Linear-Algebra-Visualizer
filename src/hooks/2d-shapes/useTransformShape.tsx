@@ -1,11 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import type { MatrixData, Point2D } from '../../lib/types'
+
 import {
     applyMatrixChain,
     parseMatrixValues
 } from '../../lib/2d-shapes/applyTransform'
 import { updateShapeMesh } from '../../lib/2d-shapes/updateShapeMesh'
+import { createWireframe } from '../../lib/2d-shapes/createWireFrame'
 
 interface UseTransformShapeProps {
     sceneRef: React.RefObject<THREE.Scene | null>
@@ -17,6 +20,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     const shapeMeshRef = useRef<THREE.Mesh | null>(null)
     const originalPointsRef = useRef<Point2D[]>([])
     const currentPointsRef = useRef<Point2D[]>([])
+    const wireframesRef = useRef<LineSegments2[]>([])
 
     // matrices are now the source of truth for the shape's position: adding
     // one (or editing one) just changes this list. The shape itself only
@@ -56,7 +60,18 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     // one that got edited.
     const handleApplyMatrices = () => {
         try {
+            disposeWireframes()
+
             const numericMatrices = matrices.map(m => parseMatrixValues(m.values))
+
+            // create wireframes showing the different steps to get to current position.
+            wireframesRef.current.push(createWireframe(sceneRef.current!, originalPointsRef.current!))
+            for (let i = 0; i < numericMatrices.length; i++) {
+                const matrixIMatrices = numericMatrices.slice(0, i)
+                const pointsI = applyMatrixChain(originalPointsRef.current, matrixIMatrices)
+                wireframesRef.current.push(createWireframe(sceneRef.current!, pointsI))
+            }
+
             const newPoints = applyMatrixChain(originalPointsRef.current, numericMatrices)
             currentPointsRef.current = newPoints
             updateShapeMesh(shapeMeshRef.current!, currentPointsRef.current)
@@ -73,10 +88,24 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
             shapeMeshRef.current = null
         }
 
+        for (let i = 0; i < wireframesRef.current.length; i++) {
+            sceneRef.current!.remove(wireframesRef.current[i])
+            wireframesRef.current[i].geometry.dispose();
+            (wireframesRef.current[i].material as THREE.Material).dispose()
+        }
+
         stateRef.current = 'idle'
         setDemoState('idle')
         setMatrices([])
         setApplyError(null)
+    }
+
+    const disposeWireframes = () => {
+        for (let i = 0; i < wireframesRef.current.length; i++) {
+                sceneRef.current!.remove(wireframesRef.current[i])
+                wireframesRef.current[i].geometry.dispose();
+                (wireframesRef.current[i].material as THREE.Material).dispose()
+            }
     }
 
     return {
@@ -87,6 +116,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
         handleNewShape,
         matrices,
         handleMatrixEdit,
-        applyError
+        applyError,
+        disposeWireframes
     }
 }
