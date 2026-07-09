@@ -8,7 +8,7 @@ import {
     parseMatrixValues
 } from '../../lib/2d-shapes/applyTransform'
 import { updateShapeMesh } from '../../lib/2d-shapes/updateShapeMesh'
-import { createWireframe } from '../../lib/2d-shapes/createWireFrame'
+import { createWireframe } from '../../lib/2d-shapes/createWireframe'
 
 interface UseTransformShapeProps {
     sceneRef: React.RefObject<THREE.Scene | null>
