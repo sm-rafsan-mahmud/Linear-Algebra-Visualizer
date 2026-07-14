@@ -1,11 +1,15 @@
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
+import { useFormulaStore } from "../store/FormulaStore";
 import { matrix } from "../tools/matrixTools";
 import { vector } from "../tools/vectorTools";
+import { formula } from "../tools/FormulaTools";
+
 
 export function buildAgentContext() {
   const matrixStore = useMatrixStore.getState();
   const vectorStore = useVectorStore.getState();
+  const formulaStore = useFormulaStore.getState();
 
   return {
     // Matrix store
@@ -32,9 +36,17 @@ export function buildAgentContext() {
     getVector: (name: string) =>
       vectorStore.vectors.find((v) => v.name === name),
 
+    // Formula store
+    addFormulaRow: (value: string) => formulaStore.addFormula(value),
+    updateFormulaRow: (id: number, value: string) => formulaStore.updateFormula(id, value),
+    removeFormulaRow: (id: number) => formulaStore.removeFormula(id),
+    listFormulaRows: () => formulaStore.formulas.map((f) => f.id),
+    getFormulaRow: (id: number) => formulaStore.formulas.find((f) => f.id === id),
+    
     // Math tools
     matrix,
     vector,
+    formula,
   };
 }
 

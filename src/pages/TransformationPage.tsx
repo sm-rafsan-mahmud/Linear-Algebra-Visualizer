@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import FormulaBox from "../components/FormulaBox";
 import { useTransformationPage } from "../hooks/useTransformationPage";
-import type { RowData, MatrixData, VectorData } from "../lib/types";
+import type { FormulaData, MatrixData, VectorData } from "../lib/types";
 import * as math from "mathjs";
 import MatrixParser from "../utils/MatrixParser";
 import VectorParser from "../utils/VectorParser";
 import NormalizeMatrix from "../utils/NormalizeMatrix";
 import { matrix } from "mathjs";
-import MatrixUI from "../components/MatrixUI";
-import VectorUI from "../components/VectorUI";
+
 import ChatBox from "../components/chatBox";
 import { parseFormula } from "../utils/parsedFormula";
-
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
+import { useFormulaStore } from "../store/formulaStore";
 
 const VECTOR_COLORS = [
   "#E74C3C", "#3498DB", "#2ECC71",
@@ -51,7 +50,12 @@ export default function TransformationPage() {
     clearResultVector,
   } = useTransformationPage();
 
-  const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
+  //const [rows, setRows] = useState<RowData[]>([{ id: 1, value: "" }]);
+
+  const formulas = useFormulaStore((s) => s.formulas);
+  const addFormula = useFormulaStore((s) => s.addFormula);
+  const removeFormula = useFormulaStore((s) => s.removeFormula);
+  const setFormulas = useFormulaStore((s) => s.setFormulas);
 
   const matrices = useMatrixStore((s) => s.matrices);
   const addMatrix = useMatrixStore((s) => s.addMatrix);
@@ -62,13 +66,15 @@ export default function TransformationPage() {
   const updateVector = useVectorStore((s) => s.updateVector);
   const removeVector = useVectorStore((s) => s.removeVector);
 
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-
+  //const [selectedName, setSelectedName] = useState<string | null>(null);
+  useEffect(() => {
+    recomputeAll(formulas);
+  }, [formulas, matrices, vectors]);
   // Sync user vectors → Three.js (skip result vectors)
   useEffect(() => {
     const resultNames = new Set(
-      rows
-        .map((r) => parseFormula(r.value))
+      formulas
+        .map((f) => parseFormula(f.value))
         .filter((p) => p.kind === "compute")
         .map((p) => (p as { kind: "compute"; lhs: string }).lhs.trim())
     );
@@ -87,7 +93,7 @@ export default function TransformationPage() {
     for (let i = userVectors.length; i < 20; i++) {
       clearMatrixVector(i);
     }
-  }, [vectors, rows]);
+  }, [vectors, formulas]);
 
   function tryParseColumnVector(values: string[][]) {
     if (!values.every((r) => r.length === 1)) return null;
@@ -123,15 +129,15 @@ export default function TransformationPage() {
   }
 
   // Syncs formula box results → Three.js + vector store
-  function recomputeAll(updatedRows = rows) {
-    updatedRows.forEach((row, i) => {
-      const parsed = parseFormula(row.value);
+  function recomputeAll(updatedFormulas = formulas) {
+    updatedFormulas.forEach((formula, i) => {
+      const parsed = parseFormula(formula.value);
 
       const exprToEval =
         parsed.kind === "compute"
           ? parsed.lhs
-          : parsed.kind === "plain" && row.value.trim()
-          ? row.value.trim()
+          : parsed.kind === "plain" && formula.value.trim()
+          ? formula.value.trim()
           : null;
 
       if (!exprToEval) {
@@ -168,7 +174,7 @@ export default function TransformationPage() {
   }
 
   function handleDeleteRow(rowIdx: number) {
-    const row = rows[rowIdx];
+    const row = formulas[rowIdx];
     const parsed = parseFormula(row.value);
 
     // Clean up whatever this row created
@@ -184,14 +190,13 @@ export default function TransformationPage() {
 
     clearResultVector(rowIdx);
 
-    const updated = rows.filter((_, i) => i !== rowIdx);
-    setRows(updated);
+    const updated = formulas.filter((_, i) => i !== rowIdx);
+    removeFormula(row.id);
     recomputeAll(updated);
   }
 
   function addNewBox() {
-    const maxId = rows.reduce((m, r) => (r.id > m ? r.id : m), 0);
-    setRows([...rows, { id: maxId + 1, value: "" }]);
+    addFormula();
   }
 
   return (
@@ -221,16 +226,16 @@ export default function TransformationPage() {
 
           {/* Formula Boxes */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {rows.map((row, i) => (
+            {formulas.map((formula, i) => (
               <FormulaBox
-                key={row.id}
-                row={row}
+                key={formula.id}
+                row={formula}
                 rowIdx={i}
                 onChange={(value) => {
-                  const updated = rows.map((r, idx) =>
-                    idx === i ? { ...r, value } : r
+                  const updated = formulas.map((f, idx) =>
+                    idx === i ? { ...f, value } : f
                   );
-                  setRows(updated);
+                  setFormulas(updated);
                   recomputeAll(updated);
                 }}
                 onDelete={() => handleDeleteRow(i)}

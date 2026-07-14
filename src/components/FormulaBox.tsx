@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
-import type { RowData } from "../lib/types";
+import type { FormulaData } from "../lib/types";
 import { parseFormula } from "../utils/parsedFormula";
 import MatrixUI from "./MatrixUI";
 import VectorUI from "./VectorUI";
+import { formulaInputRegistry } from "../utils/formulaInputRegistry";
+import { row } from "mathjs";
 
 interface FormulaRowProps {
-  row: RowData;
+  row: FormulaData;
   rowIdx: number;
   onChange: (value: string) => void;
   onDelete: () => void;
@@ -21,6 +23,23 @@ export default function FormulaRow({
   onDelete,
   computeResult,
 }: FormulaRowProps) {
+
+  const[value, setValue] = useState(row.value);
+
+  useEffect(() => {
+    // Register the input change handler for this row
+    formulaInputRegistry.set(row.id, (value: string) => {;
+    setValue(value);
+    onChange(value);
+    });
+  },[row.id]);
+
+  useEffect(() => {
+    // Update the input value when the row value changes
+    setValue(row.value);
+  }, [row.value]);
+
+
   const addMatrix = useMatrixStore((s) => s.addMatrix);
   const matrices = useMatrixStore((s) => s.matrices);
   const addVector = useVectorStore((s) => s.addVector);
@@ -69,9 +88,14 @@ export default function FormulaRow({
 
       {/* Variable input — centered vertically */}
       <input
-        value={row.value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={`f(${rowIdx + 1})`}
+        value={value}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          setValue(newValue);
+          onChange(newValue);
+        }}
+        placeholder= "Enter formula..."
+        
         style={{
           width: hasContent ? 60 : 160,
           background: "transparent",
