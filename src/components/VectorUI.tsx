@@ -2,7 +2,6 @@ import type { VectorData } from "../lib/types";
 import Vector from "./Vector";
 import { useVectorStore } from "../store/vectorStore";
 import resizeVectorValues from "../utils/ResizeVector";
-import ColorPicker from "./ColorPicker";
 
 interface VectorUIProps {
   vector: VectorData;
@@ -29,39 +28,31 @@ export default function VectorUI({
     updateVector(vector.name, resizeVectorValues(vector.values, newLength));
   }
 
-  function handleColorChange(color: string) {
-    updateVector(vector.name, vector.values, color);
-  }
-
   return (
     <div
       onClick={() => setSelectedName(vector.name)}
       style={{
         outline: selectedName === vector.name ? "2px solid #38bdf8" : "none",
-        padding: 8,
-        marginBottom: 12,
         borderRadius: 4,
+        padding: 4,
         cursor: "pointer",
+        display: "inline-flex",
+        flexDirection: "column",
+        gap: 6,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        {/* Name*/}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <strong>{vector.name}</strong>
-        </div>
-
-        {/* Resize controls */}
-        <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
-          <span style={labelStyle}>Length</span>
-          <button style={btnStyle} onClick={() => handleResize(-1)}>−</button>
-          <span style={countStyle}>{len}</span>
-          <button style={btnStyle} onClick={() => handleResize(1)}>+</button>
-        </div>
-
-        
-        <ColorPicker value={vector.color} onChange={handleColorChange} />
+      {/* Controls */}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 4 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span style={labelStyle}>Length</span>
+        <button style={btnStyle} onClick={() => handleResize(-1)}>−</button>
+        <span style={countStyle}>{len}</span>
+        <button style={btnStyle} onClick={() => handleResize(1)}>+</button>
       </div>
 
+      {/* Column vector entries */}
       <Vector
         values={vector.values}
         setValues={handleValueChange}
@@ -77,7 +68,7 @@ const btnStyle: React.CSSProperties = {
   padding: 0,
   lineHeight: "18px",
   textAlign: "center",
-  background: "#1e293b",
+  background: "#0f172a",
   border: "1px solid #334155",
   borderRadius: 3,
   color: "#94a3b8",

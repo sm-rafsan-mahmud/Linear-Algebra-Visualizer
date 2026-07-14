@@ -1,5 +1,4 @@
 import { buildAgentContext } from "./agentContext";
-console.log("key:", import.meta.env.VITE_GEMINI_API_KEY);
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -31,6 +30,7 @@ function executeCode(code: string, context: Record<string, unknown>): string {
 function buildSystemPrompt(context: ReturnType<typeof buildAgentContext>): string {
   const matrices = context.listMatrices();
   const vectors = context.listVectors();
+  const formulas = context.listFormulaRows();
 
   return `You are a linear algebra assistant embedded in an interactive visualizer.
 When you need to add, update, or remove matrices or vectors in the app, write JavaScript in a \`\`\`js code block. The code will be executed automatically and the UI will update.
@@ -38,54 +38,55 @@ When you need to add, update, or remove matrices or vectors in the app, write Ja
 ## Available functions (already in scope — do NOT import anything):
 
 ### Matrix store
-- addMatrix(name: string, values: string[][])   — values must be a 2D array of strings e.g. [["1","2"],["3","4"]]
+- addMatrix(name: string, values: string[][])
 - updateMatrix(name: string, values: string[][])
 - removeMatrix(name: string)
 - listMatrices() → string[]
 - getMatrix(name: string) → { name, values } | undefined
 
 ### Vector store
-- addVector(name: string, values: string[])     — values must be a 1D array of strings e.g. ["1","2","3"]
+- addVector(name: string, values: string[])
 - updateVector(name: string, values: string[])
 - removeVector(name: string)
 - listVectors() → string[]
 - getVector(name: string) → { name, values } | undefined
 
+### Formula tools (preferred)
+- formula.add(value) (value is the name of the matrix or vector or a constant and must end with an equal sign)
+example: formula.add("A*v =") will create a new formula row with the text "A*v =" 
+- formula.update(id, value)
+- formula.remove(id)
+- formula.removeByValue(value)
+- formula.list()
+
+### Formula store (advanced)
+- updateFormulaRow(id: number, value: string)
+- removeFormulaRow(id: number)
+- listFormulaRows() → number[]
+- getFormulaRow(id: number) → { id, value } | undefined
+
 ### Math tools
-- matrix.add(a, b)        matrix.subtract(a, b)    matrix.multiply(a, b)
-- matrix.det(a)           matrix.inverse(a)         matrix.transpose(a)
-- matrix.eigenVals(a)     matrix.eigenVectors(a)
-- vector.add(...names)    vector.subtract(a, b)     vector.dot(a, b)
-- vector.cross(a, b)      vector.magnitude(a)       vector.scalarMultiply(a, scalar)
+- matrix.add(a, b)         matrix.subtract(a, b)    matrix.multiply(a, b)
+- matrix.det(a)            matrix.inverse(a)         matrix.transpose(a)
+- matrix.eigenVals(a)      matrix.eigenVectors(a)
+- vector.add(...names)     vector.subtract(a, b)     vector.dot(a, b)
+- vector.cross(a, b)       vector.magnitude(a)       vector.scalarMultiply(a, scalar)
+- formula.add(value)       formula.update(id, value) formula.remove(id)
+- formula.removeByValue(value)                        formula.list()
 
 ## Rules
 - Values are always strings — write numbers as "1" not 1.
 - Choose short single-letter names (A, B, v, u) unless the user says otherwise.
+- When you call addMatrix or addVector, a formula row is not automatically created — always call addFormulaRow separately for those and put an equal sign after formula names in the formula row (e.g., "A*v =").
+- Only call addFormulaRow for compute expressions like "A*v =".
 - Write one code block per logical operation. Do not chain unrelated operations.
-- Always use Latex formatiing inside the chatbox.
-- Explain the math properly and use actual mathematical form of objects similar to writing with latex
-- Explain like a math teacher on what happens and have a geometrical explanation as well
-(Like vector matrix multiplication is basically transforming the space which results in the change of the vector,
-explain based on different perspective(change of bases), or how pivots are in different entries are impacting the transformation)
--Always mention if a matrix is independent or not their bases (as cols of number not row) and null space.
 - Never call functions outside of a code block.
-- Matrix should always have a name A,B,C...(always upper case) with 2 long bars in each side and only numbers or math signs as entries like sin90/pi sign
-- Vector should always be named in lower case and must have 2 big brackets enclosing the entries. Entries must be as Columns not rows.
-
-## LaTeX formatting rules — ALWAYS follow these:
-- ALWAYS write matrices using LaTeX bmatrix: $$\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}$$
-- ALWAYS write column vectors using LaTeX bmatrix: $$\\begin{bmatrix} x \\\\ y \\\\ z \\end{bmatrix}$$
-- ALWAYS write inline math (variable names, scalars, expressions) with single dollar signs: $A$, $\\mathbf{v}$, $\\lambda$
-- ALWAYS write standalone equations and matrices with double dollar signs: $$A\\mathbf{v} = \\lambda\\mathbf{v}$$
-- Use \\mathbf{} for vector names: $\\mathbf{v}$, $\\mathbf{u}$
-- Use proper LaTeX symbols: \\cdot for dot product, \\times for cross product, \\det for determinant
-- NEVER write matrices or vectors as plain text arrays like [[1,2],[3,4]] in your explanation — always use LaTeX bmatrix
-- NEVER use \\vmatrix for matrices — always use \\bmatrix
-
+- Explain concepts with geometric intuition like a math teacher.
 
 ## Current app state
-Matrices: ${matrices.length ? matrices.join(", ") : "none"}
-Vectors:  ${vectors.length ? vectors.join(", ") : "none"}`;
+Matrices:     ${matrices.length ? matrices.join(", ") : "none"}
+Vectors:      ${vectors.length ? vectors.join(", ") : "none"}
+Formula rows: ${formulas.length ? formulas.join(" | ") : "none"}`;
 }
 
 export async function runAgentTurn(
@@ -96,23 +97,31 @@ export async function runAgentTurn(
   const context = buildAgentContext();
   const systemPrompt = buildSystemPrompt(context);
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-  },
-  body: JSON.stringify({
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 2048,
-    stream: true,
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...history.map((m) => ({ role: m.role, content: m.content })),
-      { role: "user", content: userMessage },
-    ],
-  }),
-});
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }],
+        },
+        contents: [
+          ...history.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          })),
+          { role: "user", parts: [{ text: userMessage }] },
+        ],
+        generationConfig: {
+          maxOutputTokens: 2048,
+        },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const err = await response.text();
@@ -133,17 +142,19 @@ export async function runAgentTurn(
       const data = line.slice(6).trim();
       if (data === "[DONE]" || !data) continue;
       try {
+        
         const parsed = JSON.parse(data);
-        const delta = parsed.choices?.[0]?.delta?.content;
+        const delta = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
         if (delta) {
-        fullText += delta;
-        onChunk(delta);
+          fullText += delta;
+          onChunk(delta);
         }
+
+        //eslint-disable-next-line no-empty
       } catch {}
     }
   }
 
-  // Execute code blocks after full response is streamed
   const blocks = extractCodeBlocks(fullText);
   for (const code of blocks) {
     executeCode(code, context as Record<string, unknown>);

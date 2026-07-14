@@ -1,3 +1,4 @@
+import { useFormulaStore } from "../store/FormulaStore";
 import { useMatrixStore } from "../store/matrixStore";
 import { useVariableStore } from "../store/variableStore";
 import { useVectorStore } from "../store/vectorStore";
@@ -25,4 +26,16 @@ export function getVariable(name: string){
 
 export function listVariable(){
     return useVariableStore.getState().variables.map(variable => variable.name);
+}
+
+export function getFormula(id: number){
+    return useFormulaStore.getState().formulas.find((formula)=> formula.id === id);
+}
+
+export function listFormulas(){
+    return useFormulaStore.getState().formulas.map(formula => formula.id);
+}
+
+export function getFormulaByValue(value: string) {
+  return useFormulaStore.getState().formulas.find((f) => f.value.trim() === value.trim());
 }

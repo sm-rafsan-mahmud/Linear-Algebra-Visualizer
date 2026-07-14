@@ -44,7 +44,6 @@ export default function MatrixUI({
     >
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <strong>{matrix.name}</strong>
 
         <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
           {/* Row controls */}

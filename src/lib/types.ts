@@ -4,6 +4,12 @@ import { Line2 } from 'three/addons/lines/Line2.js'
 export type Page = 'home' | 'transformations'
 export type Point3D = { x: number, y: number, z: number }
 
+
+export interface FormulaData {
+  id: number;     
+  value: string; 
+}
+
 export interface MatrixData {
   name: string;
   values: string[][];

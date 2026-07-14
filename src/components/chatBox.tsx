@@ -43,7 +43,7 @@ export default function ChatBox() {
         err instanceof Error ? err.message : "Unknown error";
       setHistory((h) => [
         ...h,
-        { role: "assistant", content: `⚠️ ${errMsg}` },
+        { role: "assistant", content: `${errMsg}` },
       ]);
     } finally {
       setStreaming(false);
