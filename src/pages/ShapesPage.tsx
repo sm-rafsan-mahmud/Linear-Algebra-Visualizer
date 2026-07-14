@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -10,7 +10,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableMatrixItem from '../components/2d-shapes/SortableMatrixItem'
 import { useShapesPage } from '../hooks/2d-shapes/useShapesPage'
-import type { Page, ShapesPageState, TransformationType } from '../lib/types'
+import type { Page, ShapesPageState, TransformationType, ApplyTransformButton } from '../lib/types'
 import * as buildMatrix from '../lib/2d-shapes/buildMatrices'
 import ShapeManager from '../components/2d-shapes/ShapeManager'
 
@@ -26,7 +26,7 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     handleCancelPlacing,
     addMatrix,
     reorderMatrices,
-    handleApplyMatrices,
+    applyTransformsToIndex,
     handleNewShape,
     matrices,
     handleMatrixEdit,
@@ -35,6 +35,8 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
   } = useShapesPage()
 
   const [selectedMatrixName, setSelectedMatrixName] = useState<string | null>(null)
+  const currTransformRef = useRef(0)
+  const [currTransform, setCurrTransform] = useState(0)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,27 +55,47 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     reorderMatrices(oldIndex, newIndex)
   }
 
-  const setTemplate = (name: string, type: TransformationType) => {
-  switch (type) {
-    case 'translation':
-      handleMatrixEdit(name, buildMatrix.translation(1, 2))
-      break
-    case 'dilation':
-      handleMatrixEdit(name, buildMatrix.dilation(2))
-      break
-    case 'rotation':
-      handleMatrixEdit(name, buildMatrix.rotation(45))
-      break
-    case 'shear':
-      handleMatrixEdit(name, buildMatrix.shear(2, 0))
-      break
-    case 'squeeze':
-      handleMatrixEdit(name, buildMatrix.squeeze(2, 0.5))
-      break
-    case 'reflection':
-      handleMatrixEdit(name, buildMatrix.reflection(true, false))
+  const handleApplyTransforms = (type: ApplyTransformButton) => {
+    switch (type) {
+      case 'Reset':
+        currTransformRef.current = 0
+        break
+      case 'Prev':
+        if (currTransformRef.current !== 0) currTransformRef.current--
+        break
+      case 'Next':
+        if (currTransformRef.current < matrices.length) currTransformRef.current++
+        break
+      case 'All':
+        currTransformRef.current = matrices.length
+        break
+    }
+
+    setCurrTransform(currTransformRef.current)
+    applyTransformsToIndex(currTransformRef.current)
   }
-}
+
+  const setTemplate = (name: string, type: TransformationType) => {
+    switch (type) {
+      case 'translation':
+        handleMatrixEdit(name, buildMatrix.translation(1, 2))
+        break
+      case 'dilation':
+        handleMatrixEdit(name, buildMatrix.dilation(2))
+        break
+      case 'rotation':
+        handleMatrixEdit(name, buildMatrix.rotation(45))
+        break
+      case 'shear':
+        handleMatrixEdit(name, buildMatrix.shear(2, 0))
+        break
+      case 'squeeze':
+        handleMatrixEdit(name, buildMatrix.squeeze(2, 0.5))
+        break
+      case 'reflection':
+        handleMatrixEdit(name, buildMatrix.reflection(true, false))
+    }
+  }
 
   return (
     <div style={{display: "flex", height: "100vh", width: "100wv"}}>
@@ -112,7 +134,6 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
             onCancel={handleCancelPlacing}
             onNew={handleNewShape}  
           />
-          <button style={{ width: "100%" }}>Edit Transformations</button>
           <button style={{ width: "100%" }} onClick={() => addMatrix((matrices.length + 1) + '.', buildMatrix.identity(2))}>Add Transformation</button>
         </div>
 
@@ -145,9 +166,19 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
 
           {matrices.length > 0 && (
             <div>
-              <button onClick={handleApplyMatrices}>
-                Apply Transforms
+              <button onClick={() => handleApplyTransforms('Reset')}>
+                Reset Shape
               </button>
+              <button onClick={() => handleApplyTransforms('Prev')}>
+                Previous
+              </button>
+              <button onClick={() => handleApplyTransforms('Next')}>
+                Next
+              </button>
+              <button onClick={() => handleApplyTransforms('All')}>
+                Apply All
+              </button>
+              <p>Showing Transform {currTransform} of {matrices.length}</p>
               {applyError && (
                 <p style={{ color: '#f87171', fontSize: '0.875rem', marginTop: 8 }}>
                   {applyError}

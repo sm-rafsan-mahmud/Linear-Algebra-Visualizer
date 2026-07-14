@@ -12,13 +12,14 @@ export default function ShapeManager({ state, pointCount, onAdd, onCancel, onNew
     
   const labelFromState = () => {
     if (state === 'idle') return 'Add Shape'
-    if (state === 'placing') return pointCount < 3 ? 'Select Points' : 'Confirm Shape'
+    if (state === 'placing') return 'Confirm Shape'
     if (state === 'transforming') return 'New Shape'
     return ''
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "row", width: "100%" }}>
+      {state === 'placing' && <text>Select at least three grid points ({pointCount}/3).</text>}
       <button style={{ width: state === 'placing' ? "50%" : "100%" }} onClick={state !== 'transforming' ? onAdd : onNew}>{labelFromState()}</button>
       {state === 'placing' && <button style={{ width: "50%" }} onClick={onCancel}>Cancel</button>}
     </div>

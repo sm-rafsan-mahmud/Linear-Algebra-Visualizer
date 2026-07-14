@@ -32,7 +32,6 @@ export function createWireframe(
     const frame = new LineSegments2(frameGeometry, frameMaterial)
     frame.computeLineDistances()
 
-    console.log('wireframe created')
     scene.add(frame)
 
     return frame

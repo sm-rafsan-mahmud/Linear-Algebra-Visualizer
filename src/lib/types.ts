@@ -13,15 +13,11 @@ export type TransformationType
     | 'shear'
     | 'squeeze'
     | 'reflection'
-// I think this one is temporary for the refactor
-export type TransformationData = {
-    tx?: number,
-    ty?: number,
-    k?: number,
-    t?: number,
-    rfX?: boolean,
-    rfY?: boolean
-}
+export type ApplyTransformButton
+    = 'Reset'
+    | 'Prev'
+    | 'Next'
+    | 'All'
 export type Point2D = {x: number, y: number}
 
 export interface MatrixData {

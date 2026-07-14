@@ -22,9 +22,6 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
     const currentPointsRef = useRef<Point2D[]>([])
     const wireframesRef = useRef<LineSegments2[]>([])
 
-    // matrices are now the source of truth for the shape's position: adding
-    // one (or editing one) just changes this list. The shape itself only
-    // moves when handleApplyMatrices replays the whole list from scratch.
     const [matrices, setMatrices] = useState<MatrixData[]>([])
     const [applyError, setApplyError] = useState<string | null>(null)
 
@@ -54,31 +51,42 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
         setMatrices(prev => prev.map(m => (m.name === name ? { ...m, values } : m)))
     }
 
-    // Explicit apply step: re-derive the shape from the ORIGINAL points by
-    // replaying every matrix currently in the list, in order. This keeps
-    // the shape consistent even if an earlier matrix in the chain was the
-    // one that got edited.
-    const handleApplyMatrices = () => {
+    const applyTransformsToIndex = (index: number) => {
+        // reset to the original position
+        disposeWireframes()
+        updateShapeMesh(shapeMeshRef.current!, originalPointsRef.current)
+
+        // if index > 0, iterate through to index. This does two things:
+        // 1. makes it easier to implement all four mouseButtons
+        // 2. if a matrix before currTransfrom is edited, pressing any button
+        //    will reflect that change.
+        let place = 0
+        while (place < index) {
+            applyNextTransform(place++)
+        }
+    }
+
+    const applyNextTransform = (index: number) => {
+        if (!matrices[index]) return
+
         try {
-            disposeWireframes()
+            // create wireframe at current position
+            // we re-derive the new position from the original for two reasons
+            // (a) this ensures that if an earlier matrix was edited we reflect that
+            const prev = index
+            const matsToPrev = matrices.slice(0, prev).map(m => parseMatrixValues(m.values))
+            const newFramePts = applyMatrixChain(originalPointsRef.current, matsToPrev)
+            wireframesRef.current.push(createWireframe(sceneRef.current!, newFramePts))
 
-            const numericMatrices = matrices.map(m => parseMatrixValues(m.values))
-
-            // create wireframes showing the different steps to get to current position.
-            wireframesRef.current.push(createWireframe(sceneRef.current!, originalPointsRef.current!))
-            for (let i = 0; i < numericMatrices.length; i++) {
-                const matrixIMatrices = numericMatrices.slice(0, i)
-                const pointsI = applyMatrixChain(originalPointsRef.current, matrixIMatrices)
-                wireframesRef.current.push(createWireframe(sceneRef.current!, pointsI))
-            }
-
-            const newPoints = applyMatrixChain(originalPointsRef.current, numericMatrices)
-            currentPointsRef.current = newPoints
+            // move shape to new position
+            const next = ++index
+            const matsToNext = matrices.slice(0, next).map(m => parseMatrixValues(m.values))
+            currentPointsRef.current = applyMatrixChain(originalPointsRef.current, matsToNext)
             updateShapeMesh(shapeMeshRef.current!, currentPointsRef.current)
             setApplyError(null)
         } catch (err) {
             setApplyError(err instanceof Error ? err.message : 'Could not apply matrices')
-        }
+        } 
     }
 
     const handleNewShape = () => {
@@ -112,7 +120,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
         initShape,
         addMatrix,
         reorderMatrices,
-        handleApplyMatrices,
+        applyTransformsToIndex,
         handleNewShape,
         matrices,
         handleMatrixEdit,
