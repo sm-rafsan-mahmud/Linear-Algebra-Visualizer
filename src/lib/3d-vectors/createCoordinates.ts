@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Font } from 'three/addons/loaders/FontLoader.js'
-import { makeLabel } from './utilFunctions'
+import { makeLabel } from '../utilFunctions'
 
 export function createCoordinates(
     scene: THREE.Scene,

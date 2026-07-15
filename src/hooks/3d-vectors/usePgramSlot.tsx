@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { useRef } from 'react'
-import type { PgramObject, Point3D } from "../lib/types"
-import { createPgramVis, disposePgramVis } from '../lib/createPgramVis'
+import type { PgramObject, Point3D } from "../../lib/types"
+import { createPgramVis, disposePgramVis } from '../../lib/3d-vectors/createPgramVis'
 
 export function usePgramSlot({ REAL_GRID_SIZE, gridSizeRef } : {
     REAL_GRID_SIZE: number,

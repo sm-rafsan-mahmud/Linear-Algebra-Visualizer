@@ -1,10 +1,10 @@
 import * as THREE from 'three'
-import { createGrid, disposeGrid } from '../lib/createGrid';
-import { createAxes, disposeAxes } from '../lib/createAxes';
-import { createAxisLabels, disposeAxisLabels } from '../lib/createAxisLabels';
-import { createCoordinates, disposeCoordinates } from '../lib/createCoordinates';
+import { createGrid, disposeGrid } from '../../lib/3d-vectors/createGrid';
+import { createAxes, disposeAxes } from '../../lib/3d-vectors/createAxes';
+import { createAxisLabels, disposeAxisLabels } from '../../lib/3d-vectors/createAxisLabels';
+import { createCoordinates, disposeCoordinates } from '../../lib/3d-vectors/createCoordinates';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
-import type { AxisLabelsObject, AxesObject } from '../lib/types';
+import type { AxisLabelsObject, AxesObject } from '../../lib/types';
 import { useRef } from 'react';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 

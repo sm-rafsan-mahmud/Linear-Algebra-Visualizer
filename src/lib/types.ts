@@ -1,8 +1,24 @@
 import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 
-export type Page = 'home' | 'transformations'
+export type Page = 'transformations' | 'shapes'
 export type Point3D = { x: number, y: number, z: number }
+
+export type ShapesPageState = 'idle' | 'placing' | 'transforming'
+export type TransformationType
+    = 'identity'
+    | 'translation'
+    | 'dilation'
+    | 'rotation'
+    | 'shear'
+    | 'squeeze'
+    | 'reflection'
+export type ApplyTransformButton
+    = 'Reset'
+    | 'Prev'
+    | 'Next'
+    | 'All'
+export type Point2D = {x: number, y: number}
 
 
 export interface FormulaData {

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import type { AxesObject } from './types'
+import type { AxesObject } from '../types'
 
 function makeLine(points: [number, number, number, number, number, number], color: number, linewidth: number): Line2 {
         const geometry = new LineGeometry()
@@ -22,9 +22,6 @@ export function createAxes(
     size: number,
     linewidth: number = 3
 ): AxesObject {
-    const red = 0xff0000
-    const green = 0x00ff00
-    const blue = 0x0000ff
     const white = 0xffffff
 
     size += 0.5

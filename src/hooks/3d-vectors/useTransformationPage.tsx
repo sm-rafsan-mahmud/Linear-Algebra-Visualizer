@@ -3,9 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import { getFont } from '../lib/utilFunctions';
+import { getFont } from '../../lib/utilFunctions';
 import { useVectors } from './useVectors';
-import type { Point3D } from '../lib/types';
+import type { Point3D } from '../../lib/types';
 
 function computeOrthoFrustum(frustumSize: number, aspect: number) {
     return {
@@ -228,17 +228,17 @@ export function useTransformationPage() {
         return () => {
             cancelled = true
             cancelAnimationFrame(animationId)
-            if(controlsRef.current) {
-                controlsRef.current.dispose()
+            try {
+                controlsRef.current?.dispose()
+                resizeObserver.disconnect()
+                disposeAllGridObjects(scene)
+                disposeVectors(scene)
+                mount.removeEventListener('wheel', handleWheel)
+                renderer.dispose()
+                mount.removeChild(renderer.domElement)
+            } catch (err) {
+                console.error("Cleanup error:", err)
             }
-            resizeObserver.disconnect()
-
-            disposeAllGridObjects(scene)
-            disposeVectors(scene)
-            mount.removeEventListener('wheel', handleWheel)
-
-            renderer.dispose()
-            mount.removeChild(renderer.domElement)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
