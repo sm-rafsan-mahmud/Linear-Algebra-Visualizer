@@ -4,11 +4,10 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { Font } from 'three/addons/loaders/FontLoader.js'
 import type { Point3D, VectorObject } from './types'
-import { makeLabel } from './makeLabel'
-import { getScaledPos, isChopped } from './utilFunctions'
+import { getScaledPos, isChopped, makeLabel } from './utilFunctions'
 
-const HEAD_RADIUS  = 0.15
-const HEAD_LENGTH  = 0.25          // world units, not a proportion of vector length
+const HEAD_RADIUS  = 0.21
+const HEAD_LENGTH  = 0.35          // world units, not a proportion of vector length
 const SEGMENTS     = 16
 
 export function createVector(
@@ -21,6 +20,7 @@ export function createVector(
     font: Font
 ): VectorObject {
     const scaledPos = getScaledPos(pos, realSize, gridSize)
+    const length = Math.sqrt(scaledPos.x * scaledPos.x + scaledPos.y * scaledPos.y + scaledPos.z + scaledPos.z)
  
     // determine if the vector will extend past the grid
     // if so, we find the point on the grid edge it intersects
@@ -35,7 +35,11 @@ export function createVector(
     // create the head
     const headGeometry = new THREE.ConeGeometry(HEAD_RADIUS, HEAD_LENGTH, SEGMENTS)
     const headMaterial = new THREE.MeshBasicMaterial({ color })
-    const head         = new THREE.Mesh(headGeometry, headMaterial)
+
+    let head: THREE.Mesh | null = null
+    
+    if (length > HEAD_LENGTH)
+        head = new THREE.Mesh(headGeometry, headMaterial)
 
     // need to orient the cone along the vector (used later, needed in both if & else)
     const dir = new THREE.Vector3(scaledPos.x, scaledPos.y, scaledPos.z).normalize()
@@ -66,11 +70,12 @@ export function createVector(
             resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
         })
 
-        head.position.set(
-            scaledIntersect.x + dir.x * HEAD_LENGTH / 2,
-            scaledIntersect.y + dir.y * HEAD_LENGTH / 2,
-            scaledIntersect.z + dir.z * HEAD_LENGTH / 2
-        )
+        if (head)
+            head.position.set(
+                scaledIntersect.x + dir.x * HEAD_LENGTH / 2,
+                scaledIntersect.y + dir.y * HEAD_LENGTH / 2,
+                scaledIntersect.z + dir.z * HEAD_LENGTH / 2
+            )
 
     } else {
         shaftGeometry.setPositions([
@@ -84,18 +89,25 @@ export function createVector(
             resolution: new THREE.Vector2(window.innerWidth, window.innerHeight)
         })
 
-        head.position.set(
-            scaledPos.x + dir.x * HEAD_LENGTH / 2,
-            scaledPos.y + dir.y * HEAD_LENGTH / 2,
-            scaledPos.z + dir.z * HEAD_LENGTH / 2
-        )
+        if (head)
+            head.position.set(
+                scaledPos.x + dir.x * HEAD_LENGTH / 2,
+                scaledPos.y + dir.y * HEAD_LENGTH / 2,
+                scaledPos.z + dir.z * HEAD_LENGTH / 2
+            )
     }
 
-    const shaft = new Line2(shaftGeometry, shaftMaterial)
-    shaft.computeLineDistances()
- 
+    let shaft: Line2 | null = null
+
+    if(length > HEAD_LENGTH) {
+        shaft = new Line2(shaftGeometry, shaftMaterial)
+        shaft.computeLineDistances()
+    }
+
     const yAxis = new THREE.Vector3(0, 1, 0)
-    head.quaternion.setFromUnitVectors(yAxis, dir)
+
+    if (head)
+        head.quaternion.setFromUnitVectors(yAxis, dir)
 
     // create vector label
     let lblPos: Point3D | null
@@ -118,18 +130,36 @@ export function createVector(
         }
     }
 
-    const label = makeLabel(name, color, lblPos, font)
+    let label: THREE.Mesh | null = null
+
+    if (head)
+        label = makeLabel(name, color, lblPos, font, 0.4)
  
-    scene.add(shaft, head, label)
+    if (shaft) scene.add(shaft)
+
+    if (head) scene.add(head)
+        
+    if (label) scene.add(label)
+
     return { shaft, head, pos, color, name, label }
 }
 
 export function disposeVector(scene: THREE.Scene, vector: VectorObject) {
-    scene.remove(vector.shaft, vector.head, vector.label)
-    vector.shaft.geometry.dispose();
-    (vector.shaft.material as THREE.Material).dispose()
-    vector.head.geometry.dispose();
-    (vector.head.material as THREE.Material).dispose()
-    vector.label.geometry.dispose();
-    (vector.label.material as THREE.Material).dispose()
+    if (vector.shaft) {
+        scene.remove(vector.shaft)
+        vector.shaft.geometry.dispose();
+        (vector.shaft.material as THREE.Material).dispose()
+    }
+
+    if (vector.head) {
+        scene.remove(vector.head)
+        vector.head.geometry.dispose();
+        (vector.head.material as THREE.Material).dispose()
+    }
+
+    if (vector.label) {
+        scene.remove(vector.label)
+        vector.label.geometry.dispose();
+        (vector.label.material as THREE.Material).dispose()
+    }
 }

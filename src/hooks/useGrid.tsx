@@ -14,8 +14,8 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     cachedFontRef: React.RefObject<Font | null>
 }) {
     // grid variables
-    const MINOR_GRID_COLOR = 0xaaaaaa
-    const MAJOR_GRID_COLOR = 0xffffff
+    const MINOR_COLOR = 0xaaaaaa
+    const MAJOR_COLOR = 0xdddddd
     const MIN_GRID_SIZE    = 1e-4
     const MAX_GRID_SIZE    = 1e5
     const ZOOM_FACTOR      = 1.1
@@ -29,14 +29,39 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     const majorGridRef  = useRef<LineSegments2 | null>(null)
     const coordsRef     = useRef<THREE.Mesh[] | null>(null)
 
+    // transformation grid to show basis changes
+    const TRANS_COLOR = 0xbfd4ec
+    const transformRef = useRef<number[][] | null>(null)
+    const transGridRef = useRef<LineSegments2 | null>(null)
+
+    // axes functions
     const drawAxes = (scene: THREE.Scene) => {
         axesRef.current = createAxes(scene, REAL_GRID_SIZE)
         axisLabelsRef.current = createAxisLabels(scene, 11, cachedFontRef.current!)
     }
+
+    const setZLblVisible = (visible: boolean) => {
+        if (!axisLabelsRef.current) return
+        axisLabelsRef.current.zLbl.visible = visible
+    }
+
+    const setAxisLabelAngles = (camera: THREE.Camera) => {
+        if (!axisLabelsRef.current) return
+
+        const { xLbl, yLbl, zLbl } = axisLabelsRef.current!
+
+        xLbl.quaternion.copy(camera.quaternion)
+        yLbl.quaternion.copy(camera.quaternion)
+        if (camera instanceof THREE.PerspectiveCamera) {
+            // zLbl isn't visible in 2D mode so no need to change its angle
+            zLbl.quaternion.copy(camera.quaternion)
+        }
+    }
     
+    // grid functions
     const drawGrid = (scene: THREE.Scene) => {
-        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
-        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_COLOR)
         if (coordsRef.current) {
             disposeCoordinates(scene, coordsRef.current!)
         }
@@ -54,21 +79,30 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
     }
 
     const resizeGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
-        // change gridSizeRef's value
-
         const factor = direction === 'out' ? ZOOM_FACTOR : 1 / ZOOM_FACTOR
         gridSizeRef.current = Math.max(MIN_GRID_SIZE, Math.min(MAX_GRID_SIZE, gridSizeRef.current * factor))
 
         rescaleGrid(direction, scene)
 
         // dispose of and redraw the grid
-        if (gridRef.current) { disposeGrid(scene, gridRef.current) }
-        if (majorGridRef.current) { disposeGrid(scene, majorGridRef.current) }
+        if (gridRef.current) disposeGrid(scene, gridRef.current)
+        if (majorGridRef.current) disposeGrid(scene, majorGridRef.current)
+        if (transGridRef.current) disposeGrid(scene, transGridRef.current)
 
-        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_GRID_COLOR)
-        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_GRID_COLOR)
+        gridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current, MINOR_COLOR)
+        majorGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, majorStepRef.current, MAJOR_COLOR)
+        if (transformRef.current) {
+            transGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current * 2, TRANS_COLOR, transformRef.current)
+        }
     }
 
+    // change of basis grid functions
+    const drawTransformGrid = (scene: THREE.Scene, transform: number[][]) => {
+        transformRef.current = transform
+        transGridRef.current = createGrid(scene, REAL_GRID_SIZE, gridSizeRef.current, gridStepRef.current * 2, TRANS_COLOR, transform)
+    }
+
+    // helper functions
     const rescaleGrid = (direction: 'out' | 'in', scene: THREE.Scene) => {
         const ratio = majorStepRef.current / gridSizeRef.current
         const tooSmall = ratio < 0.25
@@ -117,24 +151,6 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
         initCoords(scene)
     }
 
-    const setZLblVisible = (visible: boolean) => {
-        if (!axisLabelsRef.current) return
-        axisLabelsRef.current.zLbl.visible = visible
-    }
-
-    const setAxisLabelAngles = (camera: THREE.Camera) => {
-        if (!axisLabelsRef.current) return
-
-        const { xLbl, yLbl, zLbl } = axisLabelsRef.current!
-
-        xLbl.quaternion.copy(camera.quaternion)
-        yLbl.quaternion.copy(camera.quaternion)
-        if (camera instanceof THREE.PerspectiveCamera) {
-            // zLbl isn't visible in 2D mode so no need to change its angle
-            zLbl.quaternion.copy(camera.quaternion)
-        }
-    }
-
     const initCoords = (scene: THREE.Scene) => {
         // define the number of coordinate labels
         let numLabels: number
@@ -159,11 +175,12 @@ export function useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef } : {
  
     return {
         drawAxes,
+        setZLblVisible,
+        setAxisLabelAngles,
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setZLblVisible,
-        setAxisLabelAngles
+        drawTransformGrid
     }
 
 }

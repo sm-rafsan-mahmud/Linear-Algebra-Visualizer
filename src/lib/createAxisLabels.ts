@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Font } from 'three/addons/loaders/FontLoader.js'
-import { makeLabel } from './makeLabel'
+import { makeLabel } from './utilFunctions'
 import type { AxisLabelsObject } from './types'
 
 export function createAxisLabels(
@@ -8,13 +8,11 @@ export function createAxisLabels(
     size: number,
     font: Font
 ): AxisLabelsObject {
-    const red = 0xff0000
-    const green = 0x00ff00
-    const blue = 0x0000ff
+    const white = 0xffffff
 
-    const xLbl = makeLabel('X', red, { x: size + 0.5, y: 0, z: 0 }, font)
-    const yLbl = makeLabel('Y', green, { x: 0, y: size + 0.5, z: 0 }, font)
-    const zLbl = makeLabel('Z', blue, { x: 0, y: 0, z: size - 0.5 }, font)
+    const xLbl = makeLabel('X', white, { x: size + 0.5, y: 0, z: 0 }, font, 0.4)
+    const yLbl = makeLabel('Y', white, { x: 0, y: size + 0.5, z: 0 }, font, 0.4)
+    const zLbl = makeLabel('Z', white, { x: 0, y: 0, z: size + 0.5 }, font, 0.4)
 
     scene.add(xLbl, yLbl, zLbl)
     return { xLbl, yLbl, zLbl }

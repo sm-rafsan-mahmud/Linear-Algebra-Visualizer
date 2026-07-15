@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import { getFont } from '../lib/getFont';
+import { getFont } from '../lib/utilFunctions';
 import { useVectors } from './useVectors';
 import type { Point3D } from '../lib/types';
 
@@ -45,11 +45,12 @@ export function useTransformationPage() {
 
     const {
         drawAxes,
+        setZLblVisible,
+        setAxisLabelAngles,
         drawGrid,
         disposeAllGridObjects,
         resizeGrid,
-        setZLblVisible,
-        setAxisLabelAngles
+        drawTransformGrid
     } = useGrid({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
 
     const {
@@ -161,6 +162,15 @@ export function useTransformationPage() {
 
         controlsRef.current = new OrbitControls(perspCamera, renderer.domElement)
         controlsRef.current.enableZoom = false
+        controlsRef.current.enablePan = false
+
+        // const transform = [
+        //     [1, 2, 0],
+        //     [3, 1, 0],
+        //     [0, 0, 1]
+        // ]
+
+        // drawTransformGrid(scene, transform)
 
         async function loadFont() {
             const font = await getFont()

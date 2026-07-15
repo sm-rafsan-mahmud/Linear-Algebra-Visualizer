@@ -36,7 +36,7 @@ export default function TransformationPage() {
     CAM_3D,
     CAM_2D,
     setUserVector,
-    clearUserVector,
+    clearUserVector
   } = useTransformationPage();
 
   const formulas = useFormulaStore((s) => s.formulas);
