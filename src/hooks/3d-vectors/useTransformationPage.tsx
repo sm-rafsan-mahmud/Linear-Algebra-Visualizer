@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import { getFont } from '../../lib/utilFunctions';
+import { colorToNumber, getFont } from '../../lib/utilFunctions';
 import { useVectors } from './useVectors';
 import type { Point3D } from '../../lib/types';
 
@@ -64,10 +64,6 @@ export function useTransformationPage() {
         disposeVectors,
         setVectorLabelAngles
     } = useVectors({ REAL_GRID_SIZE, gridSizeRef, cachedFontRef })
-
-    function colorToNumber(hex: string): number {
-        return parseInt(hex.replace('#', '0x'), 16);
-    }
 
     // these functions eliminate the need to pass sceneRef around through several hooks.
     const setUserVector = (idx: number, x: number, y: number, z: number, color: string, name: string) =>

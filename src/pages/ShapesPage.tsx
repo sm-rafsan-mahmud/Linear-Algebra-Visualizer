@@ -13,6 +13,7 @@ import { useShapesPage } from '../hooks/2d-shapes/useShapesPage'
 import type { Page, ShapesPageState, TransformationType, ApplyTransformButton } from '../lib/types'
 import * as buildMatrix from '../lib/2d-shapes/buildMatrices'
 import ShapeManager from '../components/2d-shapes/ShapeManager'
+import { getDefaultColor } from '../lib/utilFunctions'
 
 interface ShapesPageProps {
   swapPage: (page: Page) => void
@@ -25,13 +26,15 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     handleTogglePlacing,
     handleCancelPlacing,
     addMatrix,
+    removeMatrix,
     reorderMatrices,
     applyTransformsToIndex,
     handleNewShape,
     matrices,
     handleMatrixEdit,
     applyError,
-    mountRef
+    mountRef,
+    updateMatrixColor
   } = useShapesPage()
 
   const [selectedMatrixName, setSelectedMatrixName] = useState<string | null>(null)
@@ -48,8 +51,8 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = matrices.findIndex((m) => m.name === active.id)
-    const newIndex = matrices.findIndex((m) => m.name === over.id)
+    const oldIndex = matrices.findIndex((m) => m.id === active.id)
+    const newIndex = matrices.findIndex((m) => m.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
     reorderMatrices(oldIndex, newIndex)
@@ -97,16 +100,21 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
     }
   }
 
+  const handleDeleteMatrix = (index: number) => {
+    currTransformRef.current = removeMatrix(index)
+    setCurrTransform(currTransformRef.current)
+  }
+
   return (
-    <div style={{display: "flex", height: "100vh", width: "100wv"}}>
+    <div style={{display: 'flex', height: '100vh', width: '100wv'}}>
       {/* LEFT PANEL */}
       <div
         style={{
-          width: "33%",
-          display: "flex",
-          flexDirection: "column",
-          background: "#0f172a",
-          color: "white",
+          width: '33%',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#0f172a',
+          color: 'white',
           minHeight: 0,
         }}
       >
@@ -114,19 +122,19 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
         {/* HEADER */}
         <div
           style={{
-            overflowY: "auto",
+            overflowY: 'auto',
             padding: 20,
             gap: 12,
             minHeight: 0
           }}
         >
-          <h2 style={{margin: 0, padding: "8px 8px"}}>Transformations on Shapes</h2>
+          <h2 style={{margin: 0, padding: '8px 8px'}}>Transformations on Shapes</h2>
           <button onClick={() => swapPage('transformations')}>Vectors</button>
         </div>
 
         
         {/* CONTROLS */}
-        <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <ShapeManager
             state={demoState as ShapesPageState} 
             pointCount={pointCount} 
@@ -134,31 +142,40 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
             onCancel={handleCancelPlacing}
             onNew={handleNewShape}  
           />
-          <button style={{ width: "100%" }} onClick={() => addMatrix((matrices.length + 1) + '.', buildMatrix.identity(2))}>Add Transformation</button>
+          {demoState === 'transforming' && (
+            <button
+              style={{ width: '100%' }}
+              onClick={() => addMatrix(getDefaultColor(), (matrices.length + 1) + '.', buildMatrix.identity(2))}
+            >
+              Add Transformation
+            </button>
+          )}
         </div>
 
         {/* SCROLLABLE CONTENT */}
         <div
           style={{
             flex: 1,
-            overflowY: "auto",
+            overflowY: 'auto',
             padding: 20,
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             gap: 12,
             minHeight: 0
           }}
         >
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={matrices.map((m) => m.name)} strategy={verticalListSortingStrategy}>
-              {matrices.map((matrix) => (
+            <SortableContext items={matrices.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+              {matrices.map((matrix, index) => (
                 <SortableMatrixItem
-                  key={matrix.name}
+                  key={matrix.id}
                   matrix={matrix}
                   onChange={handleMatrixEdit}
                   selectedName={selectedMatrixName}
                   setSelectedName={setSelectedMatrixName}
                   newTemplate={(type) => setTemplate(matrix.name, type)}
+                  onDelete={() => handleDeleteMatrix(index)}
+                  onChangeColor={(color: string) => updateMatrixColor(index, color)}
                 />
               ))}
             </SortableContext>
@@ -190,8 +207,8 @@ export default function ShapesPage({ swapPage }: ShapesPageProps) {
       </div>
 
       {/* CANVAS */}
-      <div style={{flex: 1, position: "relative"}}>
-        <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+      <div style={{flex: 1, position: 'relative'}}>
+        <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
       </div>
     </div>
   )

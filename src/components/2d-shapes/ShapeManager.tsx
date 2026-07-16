@@ -19,7 +19,7 @@ export default function ShapeManager({ state, pointCount, onAdd, onCancel, onNew
 
   return (
     <div style={{ display: "flex", flexDirection: "row", width: "100%" }}>
-      {state === 'placing' && <text>Select at least three grid points ({pointCount}/3).</text>}
+      {state === 'placing' && <>Select at least three grid points ({pointCount}/3).</>}
       <button style={{ width: state === 'placing' ? "50%" : "100%" }} onClick={state !== 'transforming' ? onAdd : onNew}>{labelFromState()}</button>
       {state === 'placing' && <button style={{ width: "50%" }} onClick={onCancel}>Cancel</button>}
     </div>

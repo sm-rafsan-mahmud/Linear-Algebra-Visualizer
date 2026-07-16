@@ -6,7 +6,8 @@ import type { Point2D } from '../types'
 
 export function createWireframe(
     scene: THREE.Scene,
-    points: Point2D[]
+    points: Point2D[],
+    color: number = 0xff0000
 ): LineSegments2 {
     // trace the set of points to create the wireframe
     const framePoints: number[] = []
@@ -22,7 +23,7 @@ export function createWireframe(
     frameGeometry.setPositions(framePoints)
 
     const frameMaterial = new LineMaterial({
-        color: 0xff0000,
+        color: color,
         linewidth: 2,
         dashed: true,
         dashSize: 0.15,

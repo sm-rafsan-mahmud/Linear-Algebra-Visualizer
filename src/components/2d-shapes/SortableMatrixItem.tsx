@@ -1,19 +1,21 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import TransformMatrixUI from './TransformMatrixUI'
-import type { MatrixData, TransformationType } from '../../lib/types'
+import type { TransformationMatrixData, TransformationType } from '../../lib/types'
 
 interface SortableMatrixItemProps {
-  matrix: MatrixData
+  matrix: TransformationMatrixData
   onChange: (name: string, values: string[][]) => void
   selectedName: string | null
   setSelectedName: (name: string) => void
   newTemplate: (type: TransformationType) => void
+  onDelete: () => void
+  onChangeColor: (color: string) => void
 }
 
 export default function SortableMatrixItem({ matrix, ...rest }: SortableMatrixItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: matrix.name })
+    useSortable({ id: matrix.id })
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),

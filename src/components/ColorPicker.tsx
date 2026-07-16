@@ -31,7 +31,7 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
             <button
                 onClick={() => setOpen(prev => !prev)}
                 style={{
-                    width: 28, height: 28,
+                    width: 32, height: 32,
                     borderRadius: "50%",
                     background: value,
                     border: "2px solid #555",

@@ -2,24 +2,9 @@ import * as THREE from 'three'
 import { Line2 } from 'three/addons/lines/Line2.js'
 
 export type Page = 'transformations' | 'shapes'
+
+// transformation page
 export type Point3D = { x: number, y: number, z: number }
-
-export type ShapesPageState = 'idle' | 'placing' | 'transforming'
-export type TransformationType
-    = 'identity'
-    | 'translation'
-    | 'dilation'
-    | 'rotation'
-    | 'shear'
-    | 'squeeze'
-    | 'reflection'
-export type ApplyTransformButton
-    = 'Reset'
-    | 'Prev'
-    | 'Next'
-    | 'All'
-export type Point2D = {x: number, y: number}
-
 
 export interface FormulaData {
   id: number;     
@@ -47,6 +32,7 @@ export type AxesObject = {
     yAxis: Line2,
     zAxis: Line2
 }
+
 export type AxisLabelsObject = {
     xLbl: THREE.Mesh,
     yLbl: THREE.Mesh,
@@ -75,4 +61,31 @@ export type PgramObject = {
 export type RowData = {
     id: number;     // Unique identifier for loops and state updates
     value: string;  // The actual formula or number inside the row's cell
+}
+
+// shapes page
+export type Point2D = {x: number, y: number}
+
+export type ShapesPageState = 'idle' | 'placing' | 'transforming'
+
+export type TransformationType
+    = 'identity'
+    | 'translation'
+    | 'dilation'
+    | 'rotation'
+    | 'shear'
+    | 'squeeze'
+    | 'reflection'
+    
+export type ApplyTransformButton
+    = 'Reset'
+    | 'Prev'
+    | 'Next'
+    | 'All'
+
+export type TransformationMatrixData = {
+    id: string
+    color: string
+    name: string
+    values: string[][]
 }

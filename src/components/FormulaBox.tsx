@@ -68,6 +68,7 @@ export default function FormulaRow({
   const hasContent = matchedMatrix || matchedVector || (parsed.kind === "compute" && result);
 
   const updateVector = useVectorStore((s) => s.updateVector);
+  
   function handleColorChange(color: string) {
     if (matchedVector)
       updateVector(matchedVector.name, matchedVector.values, color);

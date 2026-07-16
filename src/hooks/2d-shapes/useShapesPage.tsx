@@ -3,7 +3,6 @@ import * as THREE from 'three'
 import { usePlaceShape } from './usePlaceShape'
 import { useTransformShape } from './useTransformShape'
 import type { ShapesPageState } from '../../lib/types'
-import { createAxes2D } from '../../lib/2d-shapes/createAxes2D'
 import { createGrid2D } from '../../lib/2d-shapes/createGrid2D'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 
@@ -18,13 +17,15 @@ export function useShapesPage() {
     const {
         initShape,
         addMatrix,
+        removeMatrix,
         reorderMatrices,
         applyTransformsToIndex,
         handleNewShape,
         matrices,
         handleMatrixEdit,
         applyError,
-        disposeWireframes
+        disposeWireframes,
+        updateMatrixColor
     } = useTransformShape({
         sceneRef,
         setDemoState,
@@ -50,7 +51,7 @@ export function useShapesPage() {
         mount.appendChild(renderer.domElement)
 
         const scene = new THREE.Scene()
-        scene.background = new THREE.Color(0xffffff)
+        scene.background = new THREE.Color(0x002233)
         sceneRef.current = scene
         
         const aspect = mount.clientHeight > 0 ? mount.clientWidth / mount.clientHeight : 1
@@ -98,9 +99,8 @@ export function useShapesPage() {
         const gridSizeX = 100
         const gridSizeY = 100
 
-        const gridObjects = createGrid2D(scene, gridSizeX, gridSizeY, gridStep, 0x444444)
-        const majorGridObjects = createGrid2D(scene, gridSizeX, gridSizeY, majorGridStep, 0x000000)
-        const axes = createAxes2D(sceneRef.current, gridSizeX, gridSizeY, 0xff0000, 0x0000ff)
+        const gridObjects = createGrid2D(scene, gridSizeX, gridSizeY, gridStep, 0xaaaaaa)
+        const majorGridObjects = createGrid2D(scene, gridSizeX, gridSizeY, majorGridStep, 0xffffff)
 
         // delegate canvas handler setup to usePlaceShape, get back its cleanup
         const cleanupCanvasHandlers = setupCanvasHandlers(mount, camera)
@@ -145,11 +145,6 @@ export function useShapesPage() {
             scene.remove(majorGridObjects)
             majorGridObjects.geometry.dispose();
             (majorGridObjects.material as THREE.Material).dispose()
-            scene.remove(axes.xAxis, axes.yAxis)
-            axes.xAxis.geometry.dispose();
-            (axes.xAxis.material as THREE.Material).dispose()
-            axes.yAxis.geometry.dispose();
-            (axes.yAxis.material as THREE.Material).dispose()
 
             disposeWireframes()
 
@@ -167,11 +162,13 @@ export function useShapesPage() {
         handleTogglePlacing,
         handleCancelPlacing,
         addMatrix,
+        removeMatrix,
         reorderMatrices,
         applyTransformsToIndex,
         handleNewShape,
         matrices,
         handleMatrixEdit,
-        applyError
+        applyError,
+        updateMatrixColor
     }
 }

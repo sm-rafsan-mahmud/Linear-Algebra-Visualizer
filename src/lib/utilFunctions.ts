@@ -33,6 +33,10 @@ export function getDefaultColor(): string {
     return DEFAULT_COLORS[Math.floor(Math.random() * 6)]
 }
 
+export function colorToNumber(hex: string): number {
+    return parseInt(hex.replace('#', '0x'), 16);
+}
+
 export function isChopped(pos: Point3D, gridSize: number) {
     if (Math.abs(pos.x) > gridSize) { return true }
     if (Math.abs(pos.y) > gridSize) { return true }
