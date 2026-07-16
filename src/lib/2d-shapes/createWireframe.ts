@@ -37,3 +37,9 @@ export function createWireframe(
 
     return frame
 }
+
+export function disposeWireframe(scene: THREE.Scene, wireframe: LineSegments2) {
+    scene.remove(wireframe)
+    wireframe.geometry.dispose();
+    (wireframe.material as THREE.Material).dispose()
+}

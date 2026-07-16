@@ -2,13 +2,9 @@ import { useCallback, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import type { TransformationMatrixData, Point2D } from '../../lib/types'
-
-import {
-    applyMatrixChain,
-    parseMatrixValues
-} from '../../lib/2d-shapes/applyTransform'
+import { applyMatrixChain, parseMatrixValues } from '../../lib/2d-shapes/applyTransform'
 import { updateShapeMesh } from '../../lib/2d-shapes/updateShapeMesh'
-import { createWireframe } from '../../lib/2d-shapes/createWireframe'
+import { createWireframe, disposeWireframe } from '../../lib/2d-shapes/createWireframe'
 import { colorToNumber } from '../../lib/utilFunctions'
 
 interface UseTransformShapeProps {
@@ -125,9 +121,7 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
 
     const disposeWireframes = () => {
         for (let i = 0; i < wireframesRef.current.length; i++) {
-            sceneRef.current!.remove(wireframesRef.current[i])
-            wireframesRef.current[i].geometry.dispose();
-            (wireframesRef.current[i].material as THREE.Material).dispose()
+            disposeWireframe(sceneRef.current!, wireframesRef.current[i])
         }
     }
 
@@ -135,6 +129,12 @@ export function useTransformShape({ sceneRef, setDemoState, stateRef }: UseTrans
         setMatrices(prev =>
             prev.map((m, i) => (i === index ? { ...m, color } : m))
         )
+
+        // redraw wireframe in new color
+        disposeWireframe(sceneRef.current!, wireframesRef.current[index])
+        const matsToIndex = matrices.slice(0, index).map(m => parseMatrixValues(m.values))
+        const pts = applyMatrixChain(originalPointsRef.current, matsToIndex)
+        wireframesRef.current[index] = createWireframe(sceneRef.current!, pts, colorToNumber(color))
     }
 
     return {

@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 
-export function createGrid2D(scene: THREE.Scene, sizeX: number, sizeY: number, step: number, color: number): THREE.LineSegments {
+export function createGrid2D(scene: THREE.Scene, size: number, step: number, color: number): THREE.LineSegments {
     const points: number[] = []
 
-    for (let i = -sizeY; i <= sizeY; i += step) {
-        points.push(-sizeX, i , 0,  sizeX, i, 0)
+    for (let i = -size; i <= size; i += step) {
+        points.push(-size, i , 0,  size, i, 0)
     }
 
-    for (let i = -sizeX; i <= sizeX; i+= step) {
-        points.push(i, -sizeY, 0, i, sizeY, 0)
+    for (let i = -size; i <= size; i+= step) {
+        points.push(i, -size, 0, i, size, 0)
     }
 
     const geometry = new THREE.BufferGeometry()

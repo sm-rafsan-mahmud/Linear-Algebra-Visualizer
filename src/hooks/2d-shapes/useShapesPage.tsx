@@ -5,6 +5,8 @@ import { useTransformShape } from './useTransformShape'
 import type { ShapesPageState } from '../../lib/types'
 import { createGrid2D } from '../../lib/2d-shapes/createGrid2D'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
+import { getFont } from '../../lib/utilFunctions'
+import { createCoordinates2D, disposeCoordinates2D } from '../../lib/2d-shapes/createCoordinates2D'
 
 export function useShapesPage() {
     const mountRef = useRef<HTMLDivElement>(null)
@@ -46,6 +48,7 @@ export function useShapesPage() {
 
     useEffect(() => {
         const mount = mountRef.current!
+        let cancelled = false
         const renderer = new THREE.WebGLRenderer({ antialias: true })
         renderer.setSize(mount.clientWidth, mount.clientHeight)
         mount.appendChild(renderer.domElement)
@@ -96,11 +99,22 @@ export function useShapesPage() {
 
         const gridStep = 1
         const majorGridStep = gridStep * 5
-        const gridSizeX = 100
-        const gridSizeY = 100
+        const gridSize = 100
 
-        const gridObjects = createGrid2D(scene, gridSizeX, gridSizeY, gridStep, 0xaaaaaa)
-        const majorGridObjects = createGrid2D(scene, gridSizeX, gridSizeY, majorGridStep, 0xffffff)
+        const gridObjects = createGrid2D(scene, gridSize, gridStep, 0xaaaaaa)
+        const majorGridObjects = createGrid2D(scene, gridSize, majorGridStep, 0xffffff)
+
+        async function loadFont(): Promise<THREE.Mesh[]> {
+            const font = await getFont()
+            if (cancelled) return []
+
+            return createCoordinates2D(scene, gridSize, majorGridStep, font)
+        }
+
+        const coordsRef = { current: null as THREE.Mesh[] | null }
+        loadFont().then(meshes => {
+            if (!cancelled) coordsRef.current = meshes
+        })
 
         // delegate canvas handler setup to usePlaceShape, get back its cleanup
         const cleanupCanvasHandlers = setupCanvasHandlers(mount, camera)
@@ -138,6 +152,7 @@ export function useShapesPage() {
         return () => {
             cancelAnimationFrame(animFrameID)
             window.removeEventListener('resize', handleResize)
+            cancelled = true
             cleanupCanvasHandlers()
             scene.remove(gridObjects)
             gridObjects.geometry.dispose();
@@ -145,6 +160,7 @@ export function useShapesPage() {
             scene.remove(majorGridObjects)
             majorGridObjects.geometry.dispose();
             (majorGridObjects.material as THREE.Material).dispose()
+            if (coordsRef.current) disposeCoordinates2D(scene, coordsRef.current)
 
             disposeWireframes()
 
