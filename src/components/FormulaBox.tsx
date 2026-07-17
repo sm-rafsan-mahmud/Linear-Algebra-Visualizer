@@ -65,13 +65,20 @@ export default function FormulaRow({
       ? vectors.find((v) => v.name === parsed.varName) ?? null
       : null;
 
-  const hasContent = matchedMatrix || matchedVector || (parsed.kind === "compute" && result);
+  const computeVector =
+    parsed.kind === "compute"
+      ? vectors.find((v) => v.name === parsed.lhs.trim()) ?? null
+      : null;
+
+  const hasContent = matchedMatrix || matchedVector || computeVector || (parsed.kind === "compute" && result);
 
   const updateVector = useVectorStore((s) => s.updateVector);
   
   function handleColorChange(color: string) {
-    if (matchedVector)
-      updateVector(matchedVector.name, matchedVector.values, color);
+    const targetVector = matchedVector ?? computeVector;
+    if (targetVector) {
+      updateVector(targetVector.name, targetVector.values, color);
+    }
   }
 
   return (
@@ -178,16 +185,16 @@ export default function FormulaRow({
         )}
 
         {/* VectorUI inline */}
-        {matchedVector && (
+        {(matchedVector || computeVector) && (
           <VectorUI
-            vector={matchedVector}
+            vector={matchedVector ?? computeVector!}
             selectedName={selectedName}
             setSelectedName={setSelectedName}
           />
         )}
 
         {/* Compute result */}
-        {parsed.kind === "compute" && result && (
+        {parsed.kind === "compute" && result && !computeVector && (
           <div style={{
             display: "flex",
             gap: 4,
@@ -235,9 +242,9 @@ export default function FormulaRow({
       </button>
 
       {/* ColorPicker */}
-      {matchedVector && (
+      {(matchedVector || computeVector) && (
         <ColorPicker
-          value={matchedVector.color ? matchedVector.color : getDefaultColor()}
+          value={(matchedVector ?? computeVector!).color ? (matchedVector ?? computeVector!).color : getDefaultColor()}
           onChange={handleColorChange}
         />
       )}

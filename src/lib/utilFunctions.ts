@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import * as mathjs from "mathjs"
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { type Font, FontLoader } from 'three/addons/loaders/FontLoader.js'
 import type { Point3D } from "./types"
@@ -84,4 +85,41 @@ export async function getFont(): Promise<Font> {
         'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
     )
     return cachedFont
+}
+
+// Newton's iteration for the orthogonal factor of A = RS
+export function polarDecompose(A: number[][]): { R: number[][]; S: number[][] } {
+  let R = A;
+  for (let i = 0; i < 12; i++) {
+    const Rinv = mathjs.inv(R) as unknown as number[][];
+    const RinvT = mathjs.transpose(Rinv);
+    const next = mathjs.multiply(0.5, mathjs.add(R, RinvT)) as unknown as number[][];
+    const diff = mathjs.norm(mathjs.subtract(next, R) as math.MathArray) as number;
+    R = next;
+    if (diff < 1e-10) break;
+  }
+  const S = mathjs.multiply(mathjs.transpose(R), A) as unknown as number[][];
+  return { R, S };
+}
+export function identity3x3(): number[][] {
+  return [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+  ];
+}
+
+export function matricesEqual(A: number[][], B: number[][], eps = 1e-9): boolean {
+  if (A.length !== B.length) return false;
+  for (let i = 0; i < A.length; i++) {
+    for (let j = 0; j < A[i].length; j++) {
+      if (Math.abs(A[i][j] - B[i][j]) > eps) return false;
+    }
+  }
+  return true;
+}
+
+export function vectorsEqual(a: number[], b: number[], eps = 1e-9): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => Math.abs(v - b[i]) <= eps);
 }

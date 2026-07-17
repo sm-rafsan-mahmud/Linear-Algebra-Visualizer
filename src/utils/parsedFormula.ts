@@ -6,15 +6,19 @@ export type ParsedFormula =
 
 export function parseFormula(value: string): ParsedFormula {
   const trimmed = value.trim();
+
+  if (!trimmed) return { kind: "plain" };
+
   const eqMatch = trimmed.match(/^(.*?)\s*=\s*$/);
 
-  if (!eqMatch) return { kind: "plain" };
+  if (eqMatch) {
+    const lhs = eqMatch[1].trim();
 
-  const lhs = eqMatch[1].trim();
+    if (!lhs) return { kind: "plain" };
+    if (/^[A-Z][a-zA-Z0-9_]*$/.test(lhs)) return { kind: "matrix-assign", varName: lhs };
+    if (/^[a-z][a-zA-Z0-9_]*$/.test(lhs)) return { kind: "vector-assign", varName: lhs };
+    return { kind: "compute", lhs };
+  }
 
-  if (/^[A-Z][a-zA-Z0-9_]*$/.test(lhs)) return { kind: "matrix-assign", varName: lhs };
-  if (/^[a-z][a-zA-Z0-9_]*$/.test(lhs)) return { kind: "vector-assign", varName: lhs };
-  if (lhs.length > 0) return { kind: "compute", lhs };
-
-  return { kind: "plain" };
+  return { kind: "compute", lhs: trimmed };
 }

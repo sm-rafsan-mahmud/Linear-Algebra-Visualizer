@@ -63,6 +63,21 @@ export type RowData = {
     value: string;  // The actual formula or number inside the row's cell
 }
 
+export type ActiveAnimation = {
+  idx: number
+  vFrom: number[]
+  vTo: number[]
+  Aprev: number[][]
+  Anext: number[][]
+  Rfrom: number[][]; Sfrom: number[][]
+  Rto: number[][]; Sto: number[][]
+  isProper: boolean
+  startTime: number
+  duration: number
+  color: string
+  name: string
+}
+
 // shapes page
 export type Point2D = {x: number, y: number}
 

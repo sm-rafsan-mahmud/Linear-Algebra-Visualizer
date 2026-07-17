@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import FormulaBox from "../components/FormulaBox";
 import { useTransformationPage } from "../hooks/3d-vectors/useTransformationPage";
 import type { Page, MatrixData, VectorData } from "../lib/types";
@@ -13,7 +13,8 @@ import { parseFormula } from "../utils/parsedFormula";
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
 import { useFormulaStore } from "../store/FormulaStore";
-import { getDefaultColor } from "../lib/utilFunctions";
+import { getDefaultColor, identity3x3, matricesEqual, vectorsEqual } from "../lib/utilFunctions";
+import { matchMatrixVectorExpr } from "../utils/matchMatrixVectorExpr";
 
 function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
   const scope: Record<string, math.Matrix> = {};
@@ -39,8 +40,11 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
     setCameraPosition,
     CAM_3D,
     CAM_2D,
+    startResultAnimation,
     setUserVector,
-    clearUserVector
+    clearUserVector,
+    setResultVector,
+    clearResultVector,
   } = useTransformationPage();
 
   const formulas = useFormulaStore((s) => s.formulas);
@@ -56,9 +60,27 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
   const addVector = useVectorStore((s) => s.addVector);
   const updateVector = useVectorStore((s) => s.updateVector);
   const removeVector = useVectorStore((s) => s.removeVector);
+  const recomputeTimerRef = useRef<number | null>(null);
+
+  const prevMatrixRef = useRef<Record<number, number[][]>>({});
+  const prevVectorRef = useRef<Record<number, number[]>>({});
 
   useEffect(() => {
-    recomputeAll(formulas);
+    if (recomputeTimerRef.current !== null) {
+      window.clearTimeout(recomputeTimerRef.current);
+    }
+
+    recomputeTimerRef.current = window.setTimeout(() => {
+      recomputeAll(formulas);
+      recomputeTimerRef.current = null;
+    }, 120);
+
+    return () => {
+      if (recomputeTimerRef.current !== null) {
+        window.clearTimeout(recomputeTimerRef.current);
+        recomputeTimerRef.current = null;
+      }
+    };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formulas, matrices, vectors]);
 
@@ -121,6 +143,24 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
     }
   }
 
+  function syncComputedVector(resultName: string, values: string[], color: string) {
+    const existing = vectors.find((v) => v.name === resultName);
+
+    if (existing) {
+      const sameValues =
+        existing.values.length === values.length &&
+        existing.values.every((value, index) => value === values[index]) &&
+        (existing.color ?? getDefaultColor()) === color;
+
+      if (!sameValues) {
+        updateVector(resultName, values, color);
+      }
+      return;
+    }
+
+    addVector({ name: resultName, values, color });
+  }
+
   // Syncs formula box results → Three.js + vector store
   function recomputeAll(updatedFormulas = formulas) {
     updatedFormulas.forEach((formula, i) => {
@@ -133,8 +173,13 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
           ? formula.value.trim()
           : null;
 
+      if (parsed.kind === "vector-assign" || parsed.kind === "matrix-assign") {
+        clearResultVector(i);
+        return;
+      }
+
       if (!exprToEval) {
-        clearUserVector(i);
+        clearResultVector(i);
         return;
       }
 
@@ -148,22 +193,53 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
           const resultName = exprToEval.trim();
           const existing = vectors.find((v) => v.name === resultName);
           const color = existing ? existing.color : getDefaultColor();
-
-          setUserVector(i, vec.x, vec.y, vec.z, color, exprToEval);
-
           const resultValues = [
             String(vec.x),
             String(vec.y),
             ...(vec.z !== 0 ? [String(vec.z)] : []),
           ];
 
-          if (existing) updateVector(resultName, resultValues);
-          else addVector({ name: resultName, values: resultValues, color });
+          const match = matchMatrixVectorExpr(
+            exprToEval,
+            matrices.map((m) => m.name),
+            vectors.map((v) => v.name)
+          );
+
+
+          if (match) {
+            const Anext = MatrixParser(matrices.find((m) => m.name === match.matrixName)!.values);
+            const vNext = VectorParser(vectors.find((v) => v.name === match.vectorName)!.values);
+            const Aprev = prevMatrixRef.current[i] ?? identity3x3();
+            const vPrev = prevVectorRef.current[i] ?? vNext; // no vector change on first run
+
+            const matrixChanged = !matricesEqual(Aprev, Anext);
+            const vectorChanged = !vectorsEqual(vPrev, vNext);
+
+            if (matrixChanged || vectorChanged) {
+              startResultAnimation(i, vPrev, vNext, Aprev, Anext, color, resultName);
+              prevMatrixRef.current[i] = Anext;
+              prevVectorRef.current[i] = vNext;
+            }
+          } else {
+            setResultVector(i, vec.x, vec.y, vec.z, color, resultName);
+            delete prevMatrixRef.current[i];
+            delete prevVectorRef.current[i];
+          }
+
+          syncComputedVector(resultName, resultValues, color);
         } else {
-          clearUserVector(i);
+          clearResultVector(i);
+          const resultName = exprToEval.trim();
+          if (vectors.some((v) => v.name === resultName)) {
+            removeVector(resultName);
+          }
         }
       } catch {
-        clearUserVector(i)
+        clearResultVector(i);
+        const resultName = exprToEval.trim();
+        if (vectors.some((v) => v.name === resultName)) {
+          removeVector(resultName);
+        }
       }
     });
   }
@@ -178,9 +254,11 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
     } else if (parsed.kind === "vector-assign") {
       removeVector(parsed.varName);
     } else if (parsed.kind === "compute") {
+      clearResultVector(rowIdx);
       const resultName = parsed.lhs.trim();
-      const exists = vectors.find((v) => v.name === resultName);
-      if (exists) removeVector(resultName);
+      if (vectors.some((v) => v.name === resultName)) {
+        removeVector(resultName);
+      }
     }
 
     clearUserVector(rowIdx);
@@ -233,7 +311,6 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
                     idx === i ? { ...f, value } : f
                   );
                   setFormulas(updated);
-                  recomputeAll(updated);
                 }}
                 onDelete={() => handleDeleteRow(i)}
                 computeResult={computeResult}

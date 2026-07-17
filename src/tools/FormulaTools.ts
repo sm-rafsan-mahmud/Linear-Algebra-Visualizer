@@ -1,6 +1,6 @@
 // formulaTools.ts
 
-import { useFormulaStore } from "../store/formulaStore";
+import { useFormulaStore } from "../store/FormulaStore";
 import { formulaInputRegistry } from "../utils/formulaInputRegistry";
 import { getFormulaByValue } from "./stateTools";
 
