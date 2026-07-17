@@ -3,10 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { useEffect, useRef } from "react";
 import { useGrid } from './useGrid';
 import type { Font } from 'three/addons/loaders/FontLoader.js'
-import { colorToNumber, getFont, polarDecompose } from '../../lib/utilFunctions';
+import { colorToNumber, getFont } from '../../lib/utilFunctions';
 import { useVectors } from './useVectors';
 import type { ActiveAnimation, Point3D } from '../../lib/types';
-import { determinant3x3, interpolatedTransform, lerpMatrix, lerpVector, multiplyMatrixVector } from '../../lib/3d-vectors/interpolateTransform';
+import { interpolatedTransform, lerpMatrix, lerpVector, multiplyMatrixVector } from '../../lib/3d-vectors/interpolateTransform';
 
 function computeOrthoFrustum(frustumSize: number, aspect: number) {
     return {
@@ -86,32 +86,6 @@ export function useTransformationPage() {
     const clearResultPgram = (idx: number) =>
         _clearResultPgram(sceneRef.current!, idx)
 
-    const startResultAnimation = (
-        idx: number,
-        vFrom: number[],
-        vTo: number[],
-        Aprev: number[][],
-        Anext: number[][],
-        color: string,
-        name: string,
-        duration = 700
-    ) => {
-        const isProper = determinant3x3(Aprev) >= -1e-9 && determinant3x3(Anext) >= -1e-9
-
-        const { R: Rfrom, S: Sfrom } = polarDecompose(Aprev)
-        const { R: Rto, S: Sto } = polarDecompose(Anext)
-
-        activeAnimationsRef.current = activeAnimationsRef.current.filter(a => a.idx !== idx)
-        activeAnimationsRef.current.push({
-            idx, vFrom, vTo, Aprev, Anext, Rfrom, Sfrom, Rto, Sto, isProper,
-            startTime: performance.now(),
-            duration,
-            color,
-            name
-        })
-    }
-
-    
     const setCameraPosition = (position: number) => {
         if (!controlsRef.current) return
         
@@ -287,7 +261,7 @@ export function useTransformationPage() {
         setCameraPosition,
         CAM_3D,
         CAM_2D,
-        startResultAnimation,
+        activeAnimationsRef,
         setUserVector,
         clearUserVector,
         setResultVector,

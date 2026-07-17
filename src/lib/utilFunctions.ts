@@ -2,7 +2,8 @@ import * as THREE from 'three'
 import * as mathjs from "mathjs"
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import { type Font, FontLoader } from 'three/addons/loaders/FontLoader.js'
-import type { Point3D } from "./types"
+import type { ActiveAnimation, Point3D } from "./types"
+import { determinant3x3 } from './3d-vectors/interpolateTransform'
 
 export function getRandomColor() {
     const h = Math.random() * 360         // any hue
@@ -123,3 +124,29 @@ export function vectorsEqual(a: number[], b: number[], eps = 1e-9): boolean {
   if (a.length !== b.length) return false;
   return a.every((v, i) => Math.abs(v - b[i]) <= eps);
 }
+
+export function startAnimation(
+        idx: number,
+        vFrom: number[],
+        vTo: number[],
+        Aprev: number[][],
+        Anext: number[][],
+        color: string,
+        name: string,
+        duration = 700,
+        ref: React.RefObject<ActiveAnimation[]>
+    ) {
+        const isProper = determinant3x3(Aprev) >= -1e-9 && determinant3x3(Anext) >= -1e-9
+
+        const { R: Rfrom, S: Sfrom } = polarDecompose(Aprev)
+        const { R: Rto, S: Sto } = polarDecompose(Anext)
+
+        ref.current = ref.current.filter(a => a.idx !== idx)
+        ref.current.push({
+            idx, vFrom, vTo, Aprev, Anext, Rfrom, Sfrom, Rto, Sto, isProper,
+            startTime: performance.now(),
+            duration,
+            color,
+            name
+        })
+    }

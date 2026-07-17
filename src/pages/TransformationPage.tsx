@@ -13,7 +13,7 @@ import { parseFormula } from "../utils/parsedFormula";
 import { useMatrixStore } from "../store/matrixStore";
 import { useVectorStore } from "../store/vectorStore";
 import { useFormulaStore } from "../store/FormulaStore";
-import { getDefaultColor, identity3x3, matricesEqual, vectorsEqual } from "../lib/utilFunctions";
+import { getDefaultColor, identity3x3, matricesEqual, startAnimation, vectorsEqual } from "../lib/utilFunctions";
 import { matchMatrixVectorExpr } from "../utils/matchMatrixVectorExpr";
 
 function buildScope(matrices: MatrixData[], vectors: VectorData[]) {
@@ -40,7 +40,7 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
     setCameraPosition,
     CAM_3D,
     CAM_2D,
-    startResultAnimation,
+    activeAnimationsRef,
     setUserVector,
     clearUserVector,
     setResultVector,
@@ -216,7 +216,7 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
             const vectorChanged = !vectorsEqual(vPrev, vNext);
 
             if (matrixChanged || vectorChanged) {
-              startResultAnimation(i, vPrev, vNext, Aprev, Anext, color, resultName);
+              startAnimation(i, vPrev, vNext, Aprev, Anext, color, resultName, 700, activeAnimationsRef);
               prevMatrixRef.current[i] = Anext;
               prevVectorRef.current[i] = vNext;
             }
