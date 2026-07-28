@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import Matrix from "./Matrix";
 import type { MatrixData } from "../lib/types";
 import { useMatrixStore } from "../store/matrixStore";
 import resizeMatrixValues from "../utils/ResizeMatrix";
+import { analyzeMatrix } from "../utils/MatrixAnalysis";
+import MatrixParser from "../utils/MatrixParser";
 
 export default function MatrixUI({
   matrix,
@@ -13,23 +16,48 @@ export default function MatrixUI({
   setSelectedName: (name: string) => void;
 }) {
   const updateMatrix = useMatrixStore((s) => s.updateMatrix);
+  const updateMatrixAnalysis = useMatrixStore((s) => s.updateMatrixAnalysis);
 
   const rows = matrix.values.length;
   const cols = matrix.values[0]?.length ?? 0;
+
+  useEffect(() => {
+    if (matrix.analysis) return;
+
+    updateMatrixAnalysis(
+      matrix.name,
+      analyzeMatrix(MatrixParser(matrix.values))
+    );
+  }, [matrix.analysis, matrix.name, matrix.values, updateMatrixAnalysis]);
 
   function handleValueChange(row: number, col: number, val: string) {
     const newValues = matrix.values.map((r, rIdx) =>
       r.map((c, cIdx) => (rIdx === row && cIdx === col ? val : c))
     );
+    const analysis = analyzeMatrix(MatrixParser(newValues));
     updateMatrix(matrix.name, newValues);
+    updateMatrixAnalysis(matrix.name, analysis);
   }
 
   function handleResize(deltaRows: number, deltaCols: number) {
-    const newRows = Math.max(1, rows + deltaRows);
-    const newCols = Math.max(1, cols + deltaCols);
-    if (newRows === rows && newCols === cols) return;
-    updateMatrix(matrix.name, resizeMatrixValues(matrix.values, newRows, newCols));
-  }
+  const newRows = Math.max(1, rows + deltaRows);
+  const newCols = Math.max(1, cols + deltaCols);
+
+  if (newRows === rows && newCols === cols) return;
+
+  const newValues = resizeMatrixValues(
+    matrix.values,
+    newRows,
+    newCols
+  );
+
+  updateMatrix(matrix.name, newValues);
+
+  updateMatrixAnalysis(
+    matrix.name,
+    analyzeMatrix(MatrixParser(newValues))
+  );
+}
 
   return (
     <div

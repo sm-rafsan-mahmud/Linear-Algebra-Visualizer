@@ -43,3 +43,56 @@ export function eigenSystem(A: number[][]){
     }
     
 }
+
+export function rref(A: number[][]): number[][] {
+    const matrix = A.map(row => [...row]);
+
+    let lead = 0;
+    const rows = matrix.length;
+    const cols = matrix[0].length;
+
+    for (let r = 0; r < rows; r++) {
+        if (cols <= lead) break;
+
+        let i = r;
+
+        while (matrix[i][lead] === 0) {
+            i++;
+
+            if (i === rows) {
+                i = r;
+                lead++;
+
+                if (cols === lead) {
+                    return matrix;
+                }
+            }
+        }
+
+        // swap rows
+        [matrix[i], matrix[r]] = [matrix[r], matrix[i]];
+
+        // divide pivot row
+        const pivot = matrix[r][lead];
+
+        matrix[r] = matrix[r].map(
+            value => value / pivot
+        );
+
+        // eliminate other rows
+        for (let j = 0; j < rows; j++) {
+            if (j !== r) {
+                const factor = matrix[j][lead];
+
+                matrix[j] = matrix[j].map(
+                    (value, k) =>
+                        value - factor * matrix[r][k]
+                );
+            }
+        }
+
+        lead++;
+    }
+
+    return matrix;
+}

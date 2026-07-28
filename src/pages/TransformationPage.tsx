@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect,useState } from "react";
 import FormulaBox from "../components/FormulaBox";
 import { useTransformationPage } from "../hooks/3d-vectors/useTransformationPage";
 import type { Page, MatrixData, VectorData } from "../lib/types";
@@ -8,6 +8,7 @@ import VectorParser from "../utils/VectorParser";
 import NormalizeMatrix from "../utils/NormalizeMatrix";
 import { matrix } from "mathjs";
 
+import { MessageCircle, X } from "lucide-react"; 
 import ChatBox from "../components/chatBox";
 import { parseFormula } from "../utils/parsedFormula";
 import { useMatrixStore } from "../store/matrixStore";
@@ -57,6 +58,9 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
   const updateVector = useVectorStore((s) => s.updateVector);
   const removeVector = useVectorStore((s) => s.removeVector);
 
+  const [chatOpen, setChatOpen] = useState(false);
+
+  //const [selectedName, setSelectedName] = useState<string | null>(null);
   useEffect(() => {
     recomputeAll(formulas);
     //eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,6 +239,7 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
                   setFormulas(updated);
                   recomputeAll(updated);
                 }}
+                
                 onDelete={() => handleDeleteRow(i)}
                 computeResult={computeResult}
               />
@@ -268,12 +273,62 @@ export default function TransformationPage({ swapPage }: TransformationPageProps
           
         </div>
 
+
+
+        <button
+          onClick={() => setChatOpen((prev) => !prev)}
+          style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          width: 60,
+          height: 60,
+          borderRadius: "50%",
+          background: "#2563eb",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          zIndex: 1000,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+          transition: "all .25s ease",
+          }}
+        >
+        {chatOpen ? <X size={28} /> : <MessageCircle size={28} />}
+        </button>
+
+
         {/* ChatBox pinned to bottom */}
         <div style={{
+          position: "fixed",
+          bottom: 100,
+          right: 24,
+
+          width: 420,
           height: 320,
-          flexShrink: 0,
-          borderTop: "1px solid #1e293b",
+
+          zIndex: 999,
+
+          borderRadius: 12,
+
+          overflow: "hidden",
+
+          background: "rgba(15,23,42,.82)",
+          backdropFilter: "blur(10px)",
+
+          border: "1px solid rgba(255,255,255,.08)",
+
+          boxShadow: "0 15px 40px rgba(0,0,0,.35)",
+
+          transition: "all .25s ease",
+
+          opacity: chatOpen ? 1 : 0,
+          transform: chatOpen
+          ? "translateY(0px) scale(1)"
+          : "translateY(20px) scale(.95)",
+
+          pointerEvents: chatOpen ? "auto" : "none",
         }}>
+      
           <ChatBox />
         </div>
       </div>

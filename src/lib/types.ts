@@ -10,10 +10,18 @@ export interface FormulaData {
   id: number;     
   value: string; 
 }
-
+export interface MatrixAnalysis {
+  rref: number[][];
+  rank: number;
+  pivotColumns: number[];
+  basis: number[][];
+  nullSpace: number[][];
+  isLinearlyIndependent: boolean;
+}
 export interface MatrixData {
   name: string;
   values: string[][];
+  analysis?: MatrixAnalysis;
 }
 
 export interface VectorData {

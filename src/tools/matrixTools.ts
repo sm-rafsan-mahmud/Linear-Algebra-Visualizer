@@ -20,6 +20,7 @@ import { addMatrices,
         transposeMatrix,
         inverseMatrix,
         eigenSystem} from "../utils/MatrixOperations";
+import { analyzeMatrix } from "../utils/MatrixAnalysis";
 
 
 export const matrix ={
@@ -71,13 +72,19 @@ export const matrix ={
     eigenVectors: (a: string) => {
         const A = getParsedMatrix(a);
 
-        if(A.length !== A[0].length){
-            throw new Error("Matrix needs to be sqaure for Eigen Decomposition")
+        if (A.length !== A[0].length) {
+            throw new Error("Matrix needs to be square for Eigen Decomposition");
         }
         return eigenSystem(A).vectors;
+    },
+    analyze: (a: string) => {
+        const A = getParsedMatrix(a);
+
+        if(A.length === 0 || A[0].length === 0){
+            throw new Error("Matrix cannot be empty for analysis")
+        }
+
+        return analyzeMatrix(A);
     }
-
-
-
 }
 

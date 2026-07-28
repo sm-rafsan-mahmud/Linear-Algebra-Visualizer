@@ -1,21 +1,18 @@
 // formulaTools.ts
 
-import { useFormulaStore } from "../store/formulaStore";
+import { useFormulaStore } from "../store/FormulaStore";
 import { formulaInputRegistry } from "../utils/formulaInputRegistry";
 import { getFormulaByValue } from "./stateTools";
 
 export const formula = {
   add: (value: string) => {
-    const store = useFormulaStore.getState();
+    useFormulaStore.getState().addFormula(value);
 
-    store.addFormula(value);
+  // re-fetch AFTER the add so we get the live array
+    const formulas = useFormulaStore.getState().formulas;
+    const newFormula = formulas[formulas.length-1];
 
-    // get the newly added row
-    const newFormula = store.formulas[store.formulas.length - 1];
-
-    // update the actual input field
     formulaInputRegistry.type(newFormula.id, value);
-
     return newFormula;
   },
 

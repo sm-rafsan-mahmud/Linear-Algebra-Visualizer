@@ -6,8 +6,9 @@ import { parseFormula } from "../utils/parsedFormula";
 import MatrixUI from "./MatrixUI";
 import VectorUI from "./VectorUI";
 import { formulaInputRegistry } from "../utils/formulaInputRegistry";
-import ColorPicker from "./ColorPicker";
+import MatrixProperties from "./MatrixProperties";
 import { getDefaultColor } from "../lib/utilFunctions";
+import ColorPicker from "./ColorPicker";
 
 interface FormulaRowProps {
   row: FormulaData;
@@ -29,12 +30,11 @@ export default function FormulaRow({
 
   useEffect(() => {
     // Register the input change handler for this row
-    formulaInputRegistry.set(row.id, (value: string) => {;
-    setValue(value);
-    onChange(value);
+    formulaInputRegistry.set(row.id, (value: string) => {
+      setValue(value);
+      onChange(value);
     });
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  },[row.id]);
+  }, [row.id]);
 
   useEffect(() => {
     // Update the input value when the row value changes
@@ -51,6 +51,7 @@ export default function FormulaRow({
   const vectors = useVectorStore((s) => s.vectors);
 
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [showProperties, setShowProperties] = useState(false);
 
   const parsed = parseFormula(row.value);
   const result = parsed.kind === "compute" ? computeResult(parsed.lhs) : null;
@@ -125,7 +126,7 @@ export default function FormulaRow({
         onFocus={(e) => (e.target.style.borderBottomColor = "#38bdf8")}
         onBlur={(e) => (e.target.style.borderBottomColor = "#475569")}
       />
-
+    
       
       {/* Right side content */}
       <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
@@ -151,11 +152,18 @@ export default function FormulaRow({
 
         {/* MatrixUI inline */}
         {matchedMatrix && (
-          <MatrixUI
-            matrix={matchedMatrix}
-            selectedName={selectedName}
-            setSelectedName={setSelectedName}
-          />
+          <>
+            <MatrixUI
+              matrix={matchedMatrix}
+              selectedName={selectedName}
+              setSelectedName={setSelectedName}
+            />
+            {showProperties && (
+              <MatrixProperties
+                matrix={matchedMatrix}
+              />
+            )}
+          </>
         )}
 
         {/* + Vector button */}
@@ -207,13 +215,44 @@ export default function FormulaRow({
           </div>
         )}
       </div>
+      
 
+
+      <div
+        style={{
+        position:"absolute",
+        top:6,
+        right:6,
+        display:"flex",
+        gap:6,
+        alignItems:"center"
+        }}
+      >
+
+    <button
+      onMouseEnter={() => setShowProperties(true)}
+      onMouseLeave={() => setShowProperties(false)}
+      style={{
+        width:18,
+        height:18,
+        padding:0,
+        background:"transparent",
+        border:"none",
+        color:"#38bdf8",
+        cursor:"pointer",
+        fontSize:14,
+        fontWeight:"bold",
+      }}
+    >
+      ?
+    </button>
       {/* Delete button — top right corner */}
       <button
         onClick={onDelete}
         title="Delete"
         style={{
           position: "absolute",
+          display: "flex",
           top: 6,
           right: 6,
           width: 18,
@@ -241,6 +280,7 @@ export default function FormulaRow({
           onChange={handleColorChange}
         />
       )}
+    </div>
     </div>
   );
 }

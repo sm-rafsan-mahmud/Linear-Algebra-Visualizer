@@ -1,4 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css"; // Ensure CSS is imported
+
 import { runAgentTurn, type ChatMessage } from "../lib/agentRunner";
 
 export default function ChatBox() {
@@ -25,26 +30,15 @@ export default function ChatBox() {
     try {
       let accumulated = "";
 
-      const fullResponse = await runAgentTurn(
-        history,
-        msg,
-        (delta) => {
-          accumulated += delta;
-          setStreamingText(accumulated);
-        }
-      );
+      const fullResponse = await runAgentTurn(history, msg, (delta) => {
+        accumulated += delta;
+        setStreamingText(accumulated);
+      });
 
-      setHistory((h) => [
-        ...h,
-        { role: "assistant", content: fullResponse },
-      ]);
+      setHistory((h) => [...h, { role: "assistant", content: fullResponse }]);
     } catch (err) {
-      const errMsg =
-        err instanceof Error ? err.message : "Unknown error";
-      setHistory((h) => [
-        ...h,
-        { role: "assistant", content: `${errMsg}` },
-      ]);
+      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      setHistory((h) => [...h, { role: "assistant", content: `${errMsg}` }]);
     } finally {
       setStreaming(false);
       setStreamingText("");
@@ -66,6 +60,7 @@ export default function ChatBox() {
         style={{
           flex: 1,
           overflowY: "auto",
+          overflowX: "auto",
           padding: "12px 16px",
           display: "flex",
           flexDirection: "column",
@@ -149,9 +144,6 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
 
-  // Render code blocks with distinct background
-  const parts = message.content.split(/(```[\s\S]*?```)/g);
-
   return (
     <div
       style={{
@@ -170,12 +162,27 @@ function MessageBubble({
           opacity: isStreaming ? 0.85 : 1,
         }}
       >
-        {parts.map((part, i) => {
-          if (part.startsWith("```")) {
-            const code = part.replace(/```(?:js|javascript|ts|typescript)?\n?/, "").replace(/```$/, "");
-            return (
+
+        <style>{`
+        .katex {
+          white-space: nowrap;
+        }
+        .katex-display {
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 4px 0;
+          margin: 0.5em 0 !important;
+        }
+      `}</style>
+
+
+        <ReactMarkdown
+          remarkPlugins={[remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={{
+            p: ({ children }) => <p style={{ margin: 0 }}>{children}</p>,
+            pre: ({ children }) => (
               <pre
-                key={i}
                 style={{
                   background: "#0f172a",
                   border: "1px solid #334155",
@@ -186,19 +193,16 @@ function MessageBubble({
                   fontFamily: "monospace",
                   fontSize: 12,
                   color: "#38bdf8",
-                  whiteSpace: "pre-wrap",
                 }}
               >
-                {code.trim()}
+                {children}
               </pre>
-            );
-          }
-          return (
-            <span key={i} style={{ whiteSpace: "pre-wrap" }}>
-              {part}
-            </span>
-          );
-        })}
+            ),
+          }}
+        >
+          {message.content}
+        </ReactMarkdown>
+
         {isStreaming && (
           <span
             style={{
