@@ -74,7 +74,7 @@ export function usePlaceShape({ sceneRef, stateRef, setDemoState, onShapeConfirm
         }
 
         // --- handle canvas clicks for placing shape points ---
-        const handleCanvasClick = (event: MouseEvent) => {
+        const handleCanvasClick = () => {
             if (stateRef.current !== 'placing') return
 
             // add a small dot at the clicked point

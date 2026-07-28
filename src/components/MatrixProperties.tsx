@@ -33,7 +33,8 @@ export default function MatrixProperties({
 
         return {
             name,
-            values: values.map(String)
+            values: values.map(String),
+            color: "white"
         };
 
     };
