@@ -19,4 +19,8 @@ export const formulaInputRegistry = {
     name(value);
     return true;
   },
+  
+  delete(id: number) {
+    delete registry[id];
+  },
 };

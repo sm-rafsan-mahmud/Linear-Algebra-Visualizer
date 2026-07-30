@@ -10,23 +10,41 @@ interface FormulaStore {
 }
 
 export const useFormulaStore = create<FormulaStore>((set, get) => ({
-  formulas: [{ id: 1, value: "" }],
+  formulas: [{ id: 0, value: "" }],
 
   addFormula: (value = "") => {
     const state = get();
-    const maxId = state.formulas.reduce((m, r) => (r.id > m ? r.id : m), 0);
-    set({ formulas: [...state.formulas, { id: maxId + 1, value }] });
+
+    const maxId = state.formulas.reduce(
+      (m, r) => (r.id > m ? r.id : m),
+      -1
+    );
+
+    set({
+      formulas: [
+        ...state.formulas,
+        {
+          id: maxId + 1,
+          value,
+        },
+      ],
+    });
   },
 
   updateFormula: (id: number, value: string) => {
     set({
-      formulas: get().formulas.map((r) => (r.id === id ? { ...r, value } : r)),
+      formulas: get().formulas.map((r) =>
+        r.id === id ? { ...r, value } : r
+      ),
     });
   },
 
   removeFormula: (id: number) => {
-    set({ formulas: get().formulas.filter((r) => r.id !== id) });
+    set({
+      formulas: get().formulas.filter((r) => r.id !== id),
+    });
   },
 
-  setFormulas: (formulas: FormulaData[]) => set({ formulas: formulas }),
+  setFormulas: (formulas: FormulaData[]) =>
+    set({ formulas }),
 }));

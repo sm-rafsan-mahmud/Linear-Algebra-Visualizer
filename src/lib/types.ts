@@ -10,6 +10,11 @@ export interface FormulaData {
   id: number;     
   value: string; 
 }
+export interface VariableData {
+    name: string;
+    value: number;
+}
+
 export interface MatrixAnalysis {
   rref: number[][];
   rank: number;

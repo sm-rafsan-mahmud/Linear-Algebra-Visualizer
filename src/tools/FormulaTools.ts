@@ -6,20 +6,26 @@ import { getFormulaByValue } from "./stateTools";
 
 export const formula = {
   add: (value: string) => {
-    useFormulaStore.getState().addFormula(value);
+    
+  console.log(
+    "Before adding:",
+    useFormulaStore.getState().formulas
+  );
 
-  // re-fetch AFTER the add so we get the live array
-    const formulas = useFormulaStore.getState().formulas;
-    const newFormula = formulas[formulas.length-1];
+  useFormulaStore.getState().addFormula(value);
 
-    formulaInputRegistry.type(newFormula.id, value);
-    return newFormula;
-  },
+  console.log(
+    "After adding:",
+    useFormulaStore.getState().formulas
+  );
 
-  update: (id: number, value: string) => {
-    useFormulaStore.getState().updateFormula(id, value);
-    formulaInputRegistry.type(id, value);
-  },
+  const formulas = useFormulaStore.getState().formulas;
+  const newFormula = formulas[formulas.length - 1];
+
+  console.log("New formula:", newFormula);
+
+  return newFormula;
+},
 
   remove: (id: number) => {
     useFormulaStore.getState().removeFormula(id);
